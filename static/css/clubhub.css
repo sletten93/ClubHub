@@ -4,6 +4,11 @@
  * Licensed under MIT (https://github.com/StartBootstrap/startbootstrap-sb-admin-2/blob/master/LICENSE)
  */
 
+/*
+ * ClubHub: adopted from SB Admin 2 v4.1.3 as our own stylesheet for direct
+ * modification (the HTML templates are already a fork of this theme).
+ */
+
 /*!
  * Bootstrap v4.6.0 (https://getbootstrap.com/)
  * Copyright 2011-2021 The Bootstrap Authors
@@ -10449,15 +10454,32 @@ a:focus {
 }
 
 .sidebar .sidebar-brand {
-  height: 4.375rem;
+  height: auto;
+  min-height: 4.375rem;
   text-decoration: none;
   font-size: 1rem;
   font-weight: 800;
-  padding: 1.5rem 1rem;
+  padding: 1rem 0;
   text-align: center;
   text-transform: uppercase;
   letter-spacing: 0.05rem;
   z-index: 1;
+}
+
+/* ClubHub brand: straight logo with the club name stacked beneath.
+   Logo is 55% of the sidebar width when expanded, 75% when collapsed on md+. */
+.sidebar .sidebar-brand .sidebar-brand-icon img {
+  display: block;
+  margin-right: auto;
+  margin-left: auto;
+  width: 55%;
+  height: auto;
+}
+
+@media (min-width: 768px) {
+  .sidebar.toggled .sidebar-brand .sidebar-brand-icon img {
+    width: 75%;
+  }
 }
 
 .sidebar .sidebar-brand .sidebar-brand-icon i {

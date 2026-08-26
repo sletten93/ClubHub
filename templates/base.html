@@ -8,7 +8,7 @@
     <title>{% block title %}ClubHub{% endblock %}</title>
     <link href="{% static 'vendor/fontawesome-free/css/all.min.css' %}" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
-    <link href="{% static 'css/sb-admin-2.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/clubhub.css' %}" rel="stylesheet">
     {% if theme %}
     <style>
         a { color: {{ theme.link }}; }
@@ -78,15 +78,16 @@
 <div id="wrapper">
     <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar"
         {% if theme %}style="background-image: linear-gradient(180deg, {{ theme.secondary }} 10%, {{ theme.secondary_active }} 100%);"{% endif %}>
-        <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{% url 'clubs:home' %}">
-            <div class="sidebar-brand-icon rotate-n-15">
+        <a class="sidebar-brand d-flex flex-column align-items-center justify-content-center"
+           href="{% url 'clubs:home' %}">
+            <div class="sidebar-brand-icon w-100">
                 {% if current_club.logo %}
-                <img src="{{ current_club.logo.url }}" alt="" style="height:32px">
+                <img src="{{ current_club.logo.url }}" alt="">
                 {% else %}
                 <i class="fas fa-fist-raised"></i>
                 {% endif %}
             </div>
-            <div class="sidebar-brand-text mx-3">{% if current_club %}{{ current_club.name }}{% else %}ClubHub{% endif %}</div>
+            <div class="sidebar-brand-text mt-2 px-2">{% if current_club %}{{ current_club.name }}{% else %}ClubHub{% endif %}</div>
         </a>
         <hr class="sidebar-divider my-0">
         <li class="nav-item{% if request.resolver_match.view_name == 'clubs:home' %} active{% endif %}">
