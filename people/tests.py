@@ -1,9 +1,13 @@
+import io
 from datetime import date
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError, transaction
 from django.test import TestCase
 from django.urls import reverse
+
+import openpyxl
 
 from clubs.models import Club
 from groups.models import Group, GroupMembership
@@ -11,6 +15,7 @@ from groups.models import Group, GroupMembership
 from . import services
 from .models import GuardianRelation, Membership, Person, StaffProfile
 from .personnummer import _luhn, birth_date_from_personnummer
+from .sportadmin import import_person_rows, parse_sportadmin_personregister
 
 
 def complete_pnr(nine_digits):
@@ -59,6 +64,200 @@ class PersonnummerTests(TestCase):
         child = self.make_person(complete_pnr("160115123"), last_name="Child")
         self.assertFalse(adult.is_minor)
         self.assertTrue(child.is_minor)
+
+    def test_masked_personnummer_accepted(self):
+        person = self.make_person("20041003-****", last_name="Masked")
+        self.assertEqual(person.personnummer, "20041003****")
+        self.assertEqual(person.birth_date, date(2004, 10, 3))
+        self.assertFalse(person.has_full_personnummer)
+
+    def test_partial_personnummer_without_tail_accepted(self):
+        person = self.make_person("20041003", last_name="Partial")
+        self.assertEqual(person.personnummer, "20041003****")
+
+    def test_masked_duplicates_allowed_per_club(self):
+        first = self.make_person("20041003-****", last_name="Sibling A")
+        second = self.make_person("20041003-****", last_name="Sibling B")
+        self.assertEqual(first.personnummer, second.personnummer)
+
+    def test_full_duplicate_still_rejected(self):
+        # The uniqueness of *full* personnummer is enforced by a conditional
+        # DB constraint (masked values are exempt), so this surfaces as an
+        # IntegrityError on save rather than a ValidationError.
+        pnr = complete_pnr("870512123")
+        self.make_person(pnr, last_name="First")
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            self.make_person(pnr, last_name="Second")
+
+    def test_blank_personnummer_allowed(self):
+        person = Person.objects.create(
+            club=self.club,
+            first_name="No",
+            last_name="Pnr",
+            gender="",
+            street_address="",
+            postal_code="",
+            city="",
+        )
+        self.assertIsNone(person.personnummer)
+        self.assertIsNone(person.birth_date)
+        self.assertFalse(person.is_minor)
+
+
+class MemberNumberTests(TestCase):
+    def setUp(self):
+        self.club = Club.objects.create(name="Test BK", slug="testbk")
+        self.other_club = Club.objects.create(name="Other BK", slug="otherbk")
+
+    def make_person(self, club, **kwargs):
+        defaults = dict(
+            club=club,
+            first_name="Anna",
+            last_name="Andersson",
+            gender=Person.Gender.FEMALE,
+        )
+        defaults.update(kwargs)
+        return Person.objects.create(**defaults)
+
+    def test_member_number_auto_assigned(self):
+        person = self.make_person(self.club)
+        self.assertEqual(person.member_number, "0001")
+
+    def test_member_number_increments_and_fills_gaps(self):
+        first = self.make_person(self.club)
+        second = self.make_person(self.club)
+        self.assertEqual(first.member_number, "0001")
+        self.assertEqual(second.member_number, "0002")
+        first.delete()
+        third = self.make_person(self.club)
+        self.assertEqual(third.member_number, "0001")
+
+    def test_member_number_scoped_per_club(self):
+        a = self.make_person(self.club)
+        b = self.make_person(self.other_club)
+        # Same sequence position in different clubs -> identical number,
+        # which is fine since uniqueness is enforced per club.
+        self.assertEqual(a.member_number, "0001")
+        self.assertEqual(b.member_number, "0001")
+
+    def test_explicit_member_number_kept(self):
+        person = self.make_person(self.club, member_number="X42")
+        self.assertEqual(person.member_number, "X42")
+
+
+def _build_sportadmin_xlsx(data_rows):
+    """Build an in-memory xlsx with the Sportadmin Personregister layout."""
+    headers = [
+        "Personnummer", "Kön", "Förnamn", "Efternamn", "c/o", "Adress",
+        "Postnummer", "Stad", "Land", "Mobiltelefon", "Telefon hem",
+        "Telefon jobb", "E-post", "Målsman 1", "Relation", "E-post",
+        "Telefon", "Målsman 2", "Relation", "E-post", "Telefon", "Skapad",
+        "Uppdaterad", "Grupprekommendation", "Övrigt", "MedlemsNr",
+        "StartÅr", "Allergi",
+    ]
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.append(headers)
+    for row in data_rows:
+        sheet.append(row)
+    buffer = io.BytesIO()
+    workbook.save(buffer)
+    return buffer.getvalue()
+
+
+class SportadminImportTests(TestCase):
+    def setUp(self):
+        self.club = Club.objects.create(name="Test BK", slug="testbk")
+
+    def test_parse_maps_core_fields(self):
+        content = _build_sportadmin_xlsx(
+            [["20041003-****", "Man", "Abdulhadi", "Rasho", "", "Gatan 1",
+              "80321", "GÄVLE", "Sverige", "0737461137", "", "",
+              "abdul@example.com", "", "", "", "", "", "", "", "",
+              "2025-12-05 08:23:30", "2025-12-05 08:23:30", "", "", "",
+              "2025-04-10", ""]]
+        )
+        rows, warnings = parse_sportadmin_personregister(content)
+        self.assertEqual(len(rows), 1)
+        row = rows[0]
+        self.assertEqual(row["first_name"], "Abdulhadi")
+        self.assertEqual(row["last_name"], "Rasho")
+        self.assertEqual(row["personnummer"], "20041003****")
+        self.assertEqual(row["gender"], Person.Gender.MALE)
+        self.assertEqual(row["email"], "abdul@example.com")
+        self.assertEqual(row["start_date"], "2025-04-10")
+        self.assertEqual(warnings, [])
+
+    def test_parse_guardian_block(self):
+        content = _build_sportadmin_xlsx(
+            [["20041003-****", "Kvinna", "Kid", "Small", "", "", "", "", "",
+              "", "", "", "kid@example.com", "Mamma Pappa", "Mamma",
+              "mamma@example.com", "0701234567", "", "", "", "", "", "", "",
+              "", "", "", ""]]
+        )
+        rows, _ = parse_sportadmin_personregister(content)
+        guardians = rows[0]["guardians"]
+        self.assertEqual(len(guardians), 1)
+        self.assertEqual(guardians[0]["name"], "Mamma Pappa")
+        self.assertEqual(guardians[0]["relation"], "Mamma")
+        self.assertEqual(guardians[0]["email"], "mamma@example.com")
+
+    def test_import_creates_person_guardian_and_membership(self):
+        rows = [{
+            "first_name": "Kid",
+            "last_name": "Small",
+            "personnummer": None,
+            "gender": Person.Gender.MALE,
+            "street_address": "Gatan 1",
+            "postal_code": "11122",
+            "city": "Stockholm",
+            "email": "kid@example.com",
+            "phone_mobile": "0701112233",
+            "notes": "",
+            "allergy": "",
+            "start_date": "2025-04-10",
+            "guardians": [{"name": "Mamma Pappa", "relation": "Mamma",
+                           "email": "mamma@example.com", "phone": "0709998877"}],
+        }]
+        created, skipped = import_person_rows(self.club, rows)
+        self.assertEqual((created, skipped), (1, 0))
+        person = Person.objects.get(email="kid@example.com")
+        self.assertTrue(person.member_number)
+        relation = GuardianRelation.objects.get(child=person)
+        self.assertEqual(relation.relation, "Mamma")
+        guardian = relation.guardian
+        self.assertEqual(guardian.email, "mamma@example.com")
+        self.assertIsNone(guardian.personnummer)
+        membership = Membership.objects.get(person=person)
+        self.assertEqual(membership.start_date, date(2025, 4, 10))
+
+    def test_reimport_skips_existing(self):
+        person = Person.objects.create(
+            club=self.club,
+            first_name="Anna",
+            last_name="Andersson",
+            gender=Person.Gender.FEMALE,
+        )
+        pnr = complete_pnr("850101123")
+        person.personnummer = pnr
+        person.save()
+        rows = [{
+            "first_name": "Anna",
+            "last_name": "Andersson",
+            "personnummer": pnr,
+            "gender": "",
+            "street_address": "",
+            "postal_code": "",
+            "city": "",
+            "email": "",
+            "phone_mobile": "",
+            "notes": "",
+            "allergy": "",
+            "start_date": "",
+            "guardians": [],
+        }]
+        created, skipped = import_person_rows(self.club, rows)
+        self.assertEqual((created, skipped), (0, 1))
 
 
 class MembershipGuardianRuleTests(TestCase):

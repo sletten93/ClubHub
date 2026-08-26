@@ -5,9 +5,17 @@ from .models import AdminGroup, GuardianRelation, Membership, Person, StaffProfi
 
 @admin.register(Person)
 class PersonAdmin(admin.ModelAdmin):
-    list_display = ("last_name", "first_name", "club", "gender", "email", "phone_mobile")
+    list_display = (
+        "member_number",
+        "last_name",
+        "first_name",
+        "club",
+        "gender",
+        "email",
+        "phone_mobile",
+    )
     list_filter = ("club", "gender")
-    search_fields = ("first_name", "last_name", "personnummer", "email")
+    search_fields = ("first_name", "last_name", "personnummer", "member_number", "email")
 
 
 @admin.register(Membership)
@@ -19,7 +27,7 @@ class MembershipAdmin(admin.ModelAdmin):
 
 @admin.register(GuardianRelation)
 class GuardianRelationAdmin(admin.ModelAdmin):
-    list_display = ("guardian", "child")
+    list_display = ("guardian", "child", "relation")
     search_fields = (
         "guardian__first_name",
         "guardian__last_name",

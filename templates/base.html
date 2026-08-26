@@ -43,6 +43,11 @@
             color: {{ theme.on_primary }};
         }
         .badge-primary { background-color: {{ theme.primary }}; }
+        table thead th {
+            background-color: {{ theme.primary }};
+            border-color: {{ theme.primary_hover }} !important;
+            color: #f8f9fa;
+        }
         .bg-primary { background-color: {{ theme.primary }} !important; }
         .text-primary { color: {{ theme.primary }} !important; }
         .border-left-primary { border-left: .25rem solid {{ theme.primary }} !important; }
@@ -117,6 +122,11 @@
                 <span>{% tr "Meddelanden" "Nav" %}</span></a>
         </li>
         {% if user.person.staff_profile.is_admin %}
+        <li class="nav-item{% if request.resolver_match.view_name|slice:':7' == 'people:' %} active{% endif %}">
+            <a class="nav-link" href="{% url 'people:register' %}">
+                <i class="fas fa-fw fa-address-book"></i>
+                <span>{% tr "Personregister" "Nav" %}</span></a>
+        </li>
         <li class="nav-item{% if request.resolver_match.view_name|slice:':9' == 'payments:' %} active{% endif %}">
             <a class="nav-link" href="{% url 'payments:list' %}">
                 <i class="fas fa-fw fa-file-invoice-dollar"></i>

@@ -8,7 +8,8 @@ ClubHub is a sport club administration web app, built **Django-first** with the 
 starting as an internal tool for a Swedish boxing club and growing into a commercial
 multi-tenant SaaS product (competitor reference: Sportadmin.se).
 
-Feature scope implemented so far: people/members/guardians/staff management, groups,
+Feature scope implemented so far: people/members/guardians/staff management (incl.
+Sportadmin "Personregister" xlsx import with preview/confirm), groups,
 seasons, recurring schedules, attendance tracking, per-season fees + invoices with manual
 payment registration, email notifications, public read-only schedule API, club branding
 (colors/logo/background) and full UI theming on top of the SB Admin 2 template.
@@ -59,7 +60,8 @@ clubhub/
 │                    seed_demo management command
 ├── people/          Person, Membership, GuardianRelation, StaffProfile, AdminGroup;
 │                    personnummer validation (people/personnummer.py);
-│                    permission services (people/services.py) + view mixins
+│                    permission services (people/services.py) + view mixins;
+│                    Sportadmin xlsx import (people/sportadmin.py)
 ├── groups/          Group + GroupMembership (role member/trainer through-model)
 ├── scheduling/      Season, ActivityTemplate -> Activity occurrences;
 │                    services.generate_occurrences / regenerate_occurrences
@@ -81,6 +83,20 @@ clubhub/
    `GuardianRelation` (parent↔child, both are Persons). A person can hold any
    combination simultaneously. Trainer status = active `GroupMembership(role=TRAINER)`
    and requires a `StaffProfile`.
+1a. **Personnummer is optional and may be masked.** Sportadmin exports mask the last
+   four digits (`20041003-****`) or omit the tail entirely, so `Person.personnummer`
+   is nullable/blank. Normalization (`people/personnummer.py`) accepts full values
+   (Luhn-checked, stored `YYYYMMDDXXXX`) and masked/partial values (date-validated
+   only, stored `YYYYMMDD****`). The per-club unique constraint applies **only to
+   full values** (conditional `UniqueConstraint`); masked duplicates are allowed
+   (same-birthdate siblings). `birth_date`/`is_minor` still work from the date part;
+   `has_full_personnummer` flags incomplete numbers.
+1b. **Member number is club-scoped.** `Person.member_number` ("MedlemsNr") auto-assigns
+   `0001`, `0002`, … per club on create when empty (fills gaps after deletes) and is
+   unique per club via conditional constraint — deliberately NOT globally unique.
+1c. **Guardian relations carry free-form relation text.** `GuardianRelation.relation`
+   stores the raw import string ("Mamma", "Pappa", …); guardians imported from
+   Sportadmin are Person rows without personnummer.
 2. **Every core model carries a `Club` FK** from day one (multi-tenancy later). Views
    always scope querysets via `people.services.visible_groups(user)` /
    `visible_activities(user)` — trainers see only their own groups, admins see the
@@ -90,8 +106,9 @@ clubhub/
    `people/services.py`, mixins (`StaffRequiredMixin`, `AdminRequiredMixin`) in
    `people/mixins.py`. Never trust `user.is_staff`; use these helpers.
 4. **Personnummer** is sensitive GDPR data: validated with Luhn checksum (incl.
-   samordningsnummer), normalized to 12 digits, unique per club. **Still stored in
-   plaintext — encryption at rest is a known pre-launch TODO.**
+   samordningsnummer) when full; optional/masked values allowed for imports (see 1a).
+   Unique per club for full values only. **Still stored in plaintext — encryption at
+   rest is a known pre-launch TODO.**
 5. **Schedules**: `ActivityTemplate` holds recurrence; dated `Activity` rows are
    generated within season bounds (`services.generate_occurrences`, idempotent).
    Editing a template triggers `regenerate_occurrences`, which deletes/recreates future

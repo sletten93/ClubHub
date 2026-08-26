@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load tr %}
+{% block title %}{% tr "Personregister" "Nav" %}{% endblock %}
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">{% tr "Personregister" "Nav" %}</h1>
+    <div class="d-flex">
+        <form method="post" action="{% url 'people:import_preview' %}" enctype="multipart/form-data" class="mr-2 mb-0" id="import-form">
+            {% csrf_token %}
+            <input type="file" name="file" id="import-file-input" accept=".xlsx"
+                   style="display:none;" />
+            <button type="button" class="btn btn-sm btn-secondary shadow-sm"
+                    onclick="document.getElementById('import-file-input').click();">
+                <i class="fas fa-upload fa-sm text-white-50"></i> {% tr "Importera" "Personregister" %}
+            </button>
+        </form>
+        <a class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" href="{% url 'people:create' %}">
+            <i class="fas fa-plus fa-sm text-white-50"></i> {% tr "Ny person" "Personregister" %}
+        </a>
+    </div>
+</div>
+{% if people %}
+<div class="table-responsive">
+    <table class="table table-bordered" width="100%" cellspacing="0">
+        <thead>
+            <tr>
+                <th style="width:70px">{% tr "Nr" "Personregister" %}</th>
+                <th>{% tr "Namn" %}</th>
+                <th>{% tr "Personnummer" "Personregister" %}</th>
+                <th>{% tr "E-post" "Personregister" %}</th>
+                <th>{% tr "Mobiltelefon" "Personregister" %}</th>
+                <th style="width:160px"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for person in people %}
+            <tr>
+                <td>{{ person.member_number }}</td>
+                <td class="font-weight-bold">{{ person.full_name }}</td>
+                <td>{% if person.personnummer %}{{ person.personnummer }}{% else %}<span class="text-muted">&mdash;</span>{% endif %}</td>
+                <td>{{ person.email }}</td>
+                <td>{{ person.phone_mobile }}</td>
+                <td>
+                    <a class="btn btn-sm btn-outline-secondary" href="{% url 'people:update' person.pk %}">{% tr "Ändra" %}</a>
+                    <a class="btn btn-sm btn-outline-danger" href="{% url 'people:delete' person.pk %}">{% tr "Ta bort" %}</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted mb-0">{% tr "Inga personer registrerade ännu." "Personregister" %}</p>
+{% endif %}
+{% endblock %}
+{% block extra_scripts %}
+<script>
+    document.getElementById('import-file-input').addEventListener('change', function () {
+        if (this.files.length > 0) {
+            document.getElementById('import-form').submit();
+        }
+    });
+</script>
+{% endblock %}

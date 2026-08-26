@@ -156,9 +156,7 @@ def membership_add(request, pk):
         try:
             membership.full_clean(exclude=["joined_on"])
             membership.save()
-            messages.success(
-                self.request, translate("Personen är tillagd.", "Grupper")
-            )
+            messages.success(request, translate("Personen är tillagd.", "Grupper"))
         except ValidationError as error:
             messages.error(request, " ".join(error.messages))
     else:
