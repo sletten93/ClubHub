@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load tr %}
+{% block title %}{% tr "Mallar" "Nav" %}{% endblock %}
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">{% tr "Mallar" "Nav" %}</h1>
+    <div>
+        <a class="btn btn-sm btn-outline-secondary shadow-sm mr-1" href="{% url 'schedule:season_create' %}">
+            <i class="fas fa-plus fa-sm"></i> {% tr "Ny säsong" "Schema" %}</a>
+        <a class="btn btn-sm btn-primary shadow-sm" href="{% url 'schedule:template_create' %}">
+            <i class="fas fa-plus fa-sm text-white-50"></i> {% tr "Ny aktivitetsmall" "Schema" %}</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">{% tr "Säsong" "Schema" %}</h6>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for season in seasons %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span><strong>{{ season.name }}</strong><br>
+                        <span class="small text-gray-500">{{ season.start_date|date:"Y-m-d" }} &ndash; {{ season.end_date|date:"Y-m-d" }}</span></span>
+                    <a class="btn btn-sm btn-outline-secondary" href="{% url 'schedule:season_update' season.pk %}">{% tr "Ändra" %}</a>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-muted">{% tr "Inga säsonger." "Schema" %}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="mb-3">
+            <a class="btn btn-sm {% if not selected_season %}btn-dark{% else %}btn-outline-dark{% endif %}"
+               href="{% url 'schedule:template_list' %}">{% tr "Alla" %}</a>
+            {% for season in seasons %}
+            <a class="btn btn-sm {% if selected_season == season.pk %}btn-dark{% else %}btn-outline-dark{% endif %}"
+               href="?season={{ season.pk }}">{{ season.name }}</a>
+            {% endfor %}
+        </div>
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">{% tr "Mallar" "Nav" %}</h6>
+            </div>
+            <div class="card-body">
+                {% if templates %}
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr><th>{% tr "Titel" "Schema" %}</th><th>{% tr "Säsong" "Schema" %}</th><th>{% tr "Grupp" %}</th><th>{% tr "Återkomster" "Schema" %}</th><th>{% tr "Tid" %}</th><th style="width:160px"></th></tr>
+                        </thead>
+                        <tbody>
+                            {% for template in templates %}
+                            <tr>
+                                <td class="font-weight-bold">{{ template.title }}</td>
+                                <td>{{ template.season.name }}</td>
+                                <td>{{ template.group.name }}</td>
+                                <td>{{ template.get_recurrence_display }}{% if template.recurrence == "weekly" %}, {{ template.get_weekday_display }}{% endif %}</td>
+                                <td>{{ template.start_time|time:"H:i" }}&ndash;{{ template.end_time|time:"H:i" }}</td>
+                                <td>
+                                    <a class="btn btn-sm btn-outline-secondary" href="{% url 'schedule:template_update' template.pk %}">{% tr "Ändra" %}</a>
+                                    <a class="btn btn-sm btn-outline-danger" href="{% url 'schedule:template_delete' template.pk %}">{% tr "Ta bort" %}</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">{% tr "Inga mallar än." "Schema" %}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load tr %}
+{% block title %}{% tr "Grupper" "Nav" %}{% endblock %}
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">{% tr "Grupper" "Nav" %}</h1>
+    <a class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" href="{% url 'groups:create' %}">
+        <i class="fas fa-plus fa-sm text-white-50"></i> {% tr "Ny grupp" "Grupper" %}
+    </a>
+</div>
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">{% tr "Grupper" "Nav" %}</h6>
+    </div>
+    <div class="card-body">
+        {% if groups %}
+        <div class="table-responsive">
+            <table class="table table-bordered" width="100%" cellspacing="0">
+                <thead>
+                    <tr><th>{% tr "Namn" %}</th><th>{% tr "Medlemmar" "Grupper" %}</th><th>{% tr "Tränare" "Grupper" %}</th><th style="width:160px"></th></tr>
+                </thead>
+                <tbody>
+                    {% for group in groups %}
+                    <tr>
+                        <td><a href="{% url 'groups:detail' group.pk %}" class="font-weight-bold">{{ group.name }}</a></td>
+                        <td>{{ group.member_count }}</td>
+                        <td>{{ group.trainer_count }}</td>
+                        <td>
+                            <a class="btn btn-sm btn-outline-secondary" href="{% url 'groups:update' group.pk %}">{% tr "Ändra" %}</a>
+                            <a class="btn btn-sm btn-outline-danger" href="{% url 'groups:delete' group.pk %}">{% tr "Ta bort" %}</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">{% tr "Inga grupper än." "Grupper" %}</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load tr %}
+{% block title %}{% tr "Meddelanden" "Nav" %}{% endblock %}
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">{% tr "Meddelanden" "Nav" %}</h1>
+    <a class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" href="{{ compose_url }}">
+        <i class="fas fa-plus fa-sm text-white-50"></i> {% tr "Nytt meddelande" "Meddelanden" %}
+    </a>
+</div>
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">{% tr "Meddelanden" "Nav" %}</h6>
+    </div>
+    <div class="card-body">
+        {% if notifications %}
+        <div class="table-responsive">
+            <table class="table table-bordered" width="100%" cellspacing="0">
+                <thead><tr><th>{% tr "Ämne" "Meddelanden" %}</th><th>{% tr "Mottagare" "Meddelanden" %}</th><th>{% tr "Skickat" "Meddelanden" %}</th></tr></thead>
+                <tbody>
+                    {% for notification in notifications %}
+                    <tr>
+                        <td><a href="{% url 'notifications:detail' notification.pk %}" class="font-weight-bold">{{ notification.subject }}</a></td>
+                        <td>
+                            {% if notification.all_members %}{% tr "Alla aktiva medlemmar" "Meddelanden" %}{% else %}{% for group in notification.groups.all %}{{ group.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
+                        </td>
+                        <td>{{ notification.sent_at|date:"Y-m-d H:i"|default:"-" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">{% tr "Inga meddelanden skickade." "Meddelanden" %}</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% load tr %}
+{% block title %}{% tr "Fakturor" "Nav" %}{% endblock %}
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">{% tr "Fakturor" "Nav" %}</h1>
+</div>
+
+<div class="row">
+    {% for tab in status_tabs %}
+    <div class="col-xl-3 col-md-6 mb-4">
+        <a href="?status={{ tab.value }}" class="text-decoration-none">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">{% tr tab.label "Fakturor" %}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ tab.count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-file-invoice-dollar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="row">
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">{% tr "Avgifter" "Fakturor" %}</h6>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for fee in fees %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span><strong>{{ fee.name }}</strong> {{ fee.amount|floatformat:"2" }} kr
+                    {% if fee.season %}<br><span class="small text-gray-500">{{ fee.season.name }}</span>{% endif %}</span>
+                    <code class="small">fee {{ fee.pk }}</code>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-muted">{% tr "Inga avgifter än." "Fakturor" %}</li>
+                {% endfor %}
+            </ul>
+            {% if fees %}
+            <div class="card-body text-muted small">
+                {% tr "Generera fakturor för alla aktiva medlemmar med kommandot generate_invoices --fee <id>." "Fakturor" %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">{% tr "Fakturor" "Nav" %}</h6>
+                <a class="btn btn-sm btn-outline-secondary" href="{% url 'payments:list' %}">{% tr "Alla" %}</a>
+            </div>
+            <div class="card-body">
+                {% if invoices %}
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr><th>{% tr "Person" "Fakturor" %}</th><th>{% tr "Avgifter" "Fakturor" %}</th><th>{% tr "Belopp" "Fakturor" %}</th><th>{% tr "Betalt" "Fakturor" %}</th><th>{% tr "Status" %}</th><th>{% tr "Förfaller" "Fakturor" %}</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for invoice in invoices %}
+                            <tr>
+                                <td><a href="{% url 'payments:detail' invoice.pk %}" class="font-weight-bold">{{ invoice.person.last_name }}, {{ invoice.person.first_name }}</a></td>
+                                <td>{{ invoice.title }}</td>
+                                <td>{{ invoice.amount|floatformat:"2" }} kr</td>
+                                <td>{{ invoice.paid_amount|floatformat:"2" }} kr</td>
+                                <td>
+                                    {% if invoice.status == "paid" %}<span class="badge badge-success">{% tr invoice.get_status_display "Fakturor" %}</span>
+                                    {% elif invoice.status == "partly_paid" %}<span class="badge badge-warning text-dark">{% tr invoice.get_status_display "Fakturor" %}</span>
+                                    {% elif invoice.status == "unpaid" %}<span class="badge badge-danger">{% tr invoice.get_status_display "Fakturor" %}</span>
+                                    {% else %}<span class="badge badge-secondary">{% tr invoice.get_status_display "Fakturor" %}</span>{% endif %}
+                                </td>
+                                <td>{{ invoice.due_date|date:"Y-m-d"|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">{% tr "Inga fakturor matchar filtret." "Fakturor" %}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if is_paginated %}
+        <nav>
+            <ul class="pagination pagination-sm justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}">&laquo;</a></li>
+                {% endif %}
+                <li class="page-item disabled"><span class="page-link">{% tr "Sida" "Fakturor" %} {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}">&raquo;</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

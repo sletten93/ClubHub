@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load tr %}
+{% block title %}{% tr "Ta bort" %}{% endblock %}
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">{% tr "Ta bort" %}</h1>
+</div>
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card border-left-danger shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-danger">{% tr "Ta bort" %}</h6>
+            </div>
+            <div class="card-body">
+                <p>{% tr "Är du säker att du vill ta bort" %} <strong>{{ object }}</strong>?</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">{% tr "Ta bort" %}</button>
+                    <a href="{{ cancel_url }}" class="btn btn-secondary">{% tr "Avbryt" %}</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

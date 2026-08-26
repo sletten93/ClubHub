@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load tr %}
+{% block title %}{% tr "Närvaro" "Startsida" %}: {{ activity.title }}{% endblock %}
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h1 class="h3 mb-0 text-gray-800">{{ activity.title }}</h1>
+        <p class="text-gray-500 mb-0">
+            {{ activity.date|date:"D Y-m-d"|capfirst }}
+            {{ activity.start_time|time:"H:i" }}&ndash;{{ activity.end_time|time:"H:i" }}
+            &middot; {{ activity.group.name }}
+            {% if activity.location %}&middot; {{ activity.location }}{% endif %}
+        </p>
+    </div>
+    <a class="btn btn-sm btn-secondary shadow-sm"
+       href="{% url 'schedule:week' %}?date={{ activity.date|date:'Y-m-d' }}">{% tr "Tillbaka till schemat" "Närvaro" %}</a>
+</div>
+
+{% if activity.is_cancelled %}
+<div class="alert alert-warning">{% tr "Detta pass är inställt." "Närvaro" %}</div>
+{% endif %}
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">
+            {{ present_count }} / {{ roster_count }} {% tr "på plats" "Närvaro" %}
+        </h6>
+        <form method="post" action="{% url 'attendance:bulk_present' activity.pk %}" class="mb-0">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-success shadow-sm">
+                <i class="fas fa-check fa-sm text-white-50"></i> {% tr "Markera alla som närvarande" "Närvaro" %}
+            </button>
+        </form>
+    </div>
+    <div class="card-body">
+        {% if roster_rows %}
+        <div class="table-responsive">
+            <table class="table table-bordered" width="100%" cellspacing="0">
+                <thead>
+                    <tr><th>{% tr "Namn" %}</th><th style="width:420px">{% tr "Status" %}</th></tr>
+                </thead>
+                <tbody>
+                    {% for row in roster_rows %}
+                    {% include "attendance/_attendance_row.html" with person=row.person current=row.record.status|default:"" %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">
+            {% tr "Inga deltagare är kopplade till gruppen." "Närvaro" %}
+            <a href="{% url 'groups:detail' activity.group.pk %}">{% tr "Hantera gruppen" "Närvaro" %}</a>.
+        </p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load tr %}
+{% block title %}{{ notification.subject }}{% endblock %}
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h1 class="h3 mb-0 text-gray-800">{{ notification.subject }}</h1>
+        <p class="text-gray-500 mb-0">
+            {% if notification.sent_at %}{{ notification.sent_at|date:"Y-m-d H:i" }}{% else %}{% tr "Ej skickat" "Meddelanden" %}{% endif %}
+            &middot; {{ notification.recipients.count }} {% tr "Mottagare" "Meddelanden" %}
+        </p>
+    </div>
+    <a class="btn btn-sm btn-secondary shadow-sm" href="{% url 'notifications:list' %}">{% tr "Tillbaka" %}</a>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">{% tr "Ämne" "Meddelanden" %}</h6>
+    </div>
+    <div class="card-body"><pre style="white-space:pre-wrap">{{ notification.body }}</pre></div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">{% tr "Leveransstatus" "Meddelanden" %}</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered" width="100%" cellspacing="0">
+                <thead><tr><th>{% tr "Namn" %}</th><th>{% tr "E-post" "Meddelanden" %}</th><th>{% tr "Status" %}</th></tr></thead>
+                <tbody>
+                    {% for recipient in notification.recipients.all %}
+                    <tr>
+                        <td>{{ recipient.person.full_name }}</td>
+                        <td>{{ recipient.person.email|default:"-" }}</td>
+                        <td>
+                            {% if recipient.sent_at %}<span class="badge badge-success">{% tr "Skickat" "Meddelanden" %}</span>
+                            {% elif recipient.error %}<span class="badge badge-danger" title="{{ recipient.error }}">{% tr "Fel" "Meddelanden" %}</span>
+                            {% else %}<span class="badge badge-secondary">{% tr "Väntar" "Meddelanden" %}</span>{% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="text-muted">{% tr "Inga mottagare." "Meddelanden" %}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

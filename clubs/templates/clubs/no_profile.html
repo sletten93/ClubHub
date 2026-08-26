@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% load tr %}
+{% block title %}{% tr "Ingen profil" "Konton" %}{% endblock %}
+{% block content %}
+<div class="alert alert-warning">
+    {% tr "Ditt konto är inte kopplat till någon person i klubben. Kontakta en administratör." "Konton" %}
+</div>
+{% endblock %}

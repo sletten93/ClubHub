@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% load tr %}
+{% block title %}{% tr "Klubbinställningar" "Nav" %}{% endblock %}
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">{% tr "Klubbinställningar" "Nav" %} &ndash; {{ current_club.name }}</h1>
+</div>
+
+<form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{% tr "Allmänt" "Klubbinställningar" %}</h6>
+        </div>
+        <div class="card-body">
+            {% for field in form %}
+            {% if field.name != "primary_color" and field.name != "secondary_color" and field.name != "logo" and field.name != "background_image" %}
+            <div class="form-group row">
+                <label class="col-md-3 col-form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                <div class="col-md-8">
+                    {{ field }}
+                    {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{% tr "UI – färger" "Klubbinställningar" %}</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>{{ form.primary_color.label }}</label>
+                        {{ form.primary_color }}
+                        <small class="form-text text-muted">{% tr "Knappar, länkar, badges och fokusmarkering." "Klubbinställningar" %}</small>
+                    </div>
+                    {% if form.primary_color.errors %}<div class="text-danger small">{{ form.primary_color.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>{{ form.secondary_color.label }}</label>
+                        {{ form.secondary_color }}
+                        <small class="form-text text-muted">{% tr "Menyn till vänster." "Klubbinställningar" %}</small>
+                    </div>
+                    {% if form.secondary_color.errors %}<div class="text-danger small">{{ form.secondary_color.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <span class="d-block text-muted mb-1">{% tr "Förhandsvisning" "Klubbinställningar" %}</span>
+                    <div class="border rounded p-3 bg-white">
+                        <button id="pv-solid" type="button" class="btn btn-primary btn-sm mr-2 mb-2">{% tr "Spara" %}</button>
+                        <button id="pv-outline" type="button" class="btn btn-outline-primary btn-sm mr-2 mb-2">{% tr "Avbryt" %}</button>
+                        <span id="pv-badge" class="badge badge-primary align-middle"
+                              style="background-color: {{ current_club.primary_color }};">{% tr "Ny" %}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{% tr "Logotyp" "Klubbinställningar" %}</h6>
+        </div>
+        <div class="card-body">
+            {{ form.logo }}
+            <small class="form-text text-muted">{% tr "Visas i menyn och på startsidan. PNG, JPG eller WebP." "Klubbinställningar" %}</small>
+            {% if form.logo.errors %}<div class="text-danger small mt-1">{{ form.logo.errors.0 }}</div>{% endif %}
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{% tr "Bakgrundsbild" "Klubbinställningar" %}</h6>
+        </div>
+        <div class="card-body">
+            {{ form.background_image }}
+            <small class="form-text text-muted">{% tr "Används som diskret bakgrund bakom innehållet, med en ljus transparent överlägg för läsbarhet." "Klubbinställningar" %}</small>
+            {% if form.background_image.errors %}<div class="text-danger small mt-1">{{ form.background_image.errors.0 }}</div>{% endif %}
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-icon-split mb-5">
+        <span class="icon text-white-50"><i class="fas fa-check"></i></span>
+        <span class="text">{% tr "Spara inställningar" "Klubbinställningar" %}</span>
+    </button>
+</form>
+
+<script>
+    (function () {
+        function readable(hex) {
+            const value = hex.replace("#", "");
+            const r = parseInt(value.slice(0, 2), 16);
+            const g = parseInt(value.slice(2, 4), 16);
+            const b = parseInt(value.slice(4, 6), 16);
+            return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6 ? "#212529" : "#ffffff";
+        }
+
+        function shade(hex, amount) {
+            const value = hex.replace("#", "");
+            let r = parseInt(value.slice(0, 2), 16);
+            let g = parseInt(value.slice(2, 4), 16);
+            let b = parseInt(value.slice(4, 6), 16);
+            if (amount >= 0) {
+                r = Math.round(r + (255 - r) * amount);
+                g = Math.round(g + (255 - g) * amount);
+                b = Math.round(b + (255 - b) * amount);
+            } else {
+                r = Math.round(r * (1 + amount));
+                g = Math.round(g * (1 + amount));
+                b = Math.round(b * (1 + amount));
+            }
+            const to2 = (n) => n.toString(16).padStart(2, "0");
+            return "#" + to2(r) + to2(g) + to2(b);
+        }
+
+        const primary = document.getElementById("id_primary_color");
+        const secondary = document.getElementById("id_secondary_color");
+        const solid = document.getElementById("pv-solid");
+        const outline = document.getElementById("pv-outline");
+        const badge = document.getElementById("pv-badge");
+
+        function updateColors() {
+            if (!primary || !secondary || !solid || !outline || !badge) return;
+            const p = primary.value;
+            solid.style.backgroundColor = p;
+            solid.style.borderColor = p;
+            solid.style.color = readable(p);
+            outline.style.color = p;
+            outline.style.borderColor = p;
+            outline.onmouseenter = function () {
+                this.style.backgroundColor = p;
+                this.style.color = readable(p);
+            };
+            outline.onmouseleave = function () {
+                this.style.backgroundColor = "";
+                this.style.color = p;
+            };
+            badge.style.backgroundColor = p;
+            badge.style.color = readable(p);
+        }
+        [primary, secondary].forEach(function (input) {
+            if (input) input.addEventListener("input", updateColors);
+        });
+        updateColors();
+
+        document.querySelectorAll("[data-clear-button]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                const checkbox = document.getElementById(button.dataset.clearButton);
+                checkbox.checked = !checkbox.checked;
+                button.textContent = checkbox.checked ? button.dataset.labelUndo : button.dataset.labelRemove;
+                button.classList.toggle("btn-danger", checkbox.checked);
+                button.classList.toggle("btn-outline-danger", !checkbox.checked);
+            });
+        });
+
+        document.querySelectorAll("input[type=file][data-preview-input]").forEach(function (input) {
+            input.addEventListener("change", function () {
+                let target = null;
+                let group = input.parentElement;
+                while (group && group !== document.body) {
+                    target = group.querySelector("[data-new-preview]");
+                    if (target) break;
+                    group = group.parentElement;
+                }
+                if (!target) return;
+                const file = input.files && input.files[0];
+                if (!file) {
+                    target.classList.add("d-none");
+                    target.src = "";
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    target.src = event.target.result;
+                    target.classList.remove("d-none");
+                };
+                reader.readAsDataURL(file);
+                const cardBody = input.closest(".card-body");
+                if (cardBody) {
+                    const current = cardBody.querySelector("[data-current-wrapper]");
+                    if (current) current.classList.add("d-none");
+                }
+            });
+        });
+    })();
+</script>
+{% endblock %}

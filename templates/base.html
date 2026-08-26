@@ -1,0 +1,278 @@
+{% load static tr %}<!DOCTYPE html>
+<html lang="sv">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>{% block title %}ClubHub{% endblock %}</title>
+    <link href="{% static 'vendor/fontawesome-free/css/all.min.css' %}" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+    <link href="{% static 'css/sb-admin-2.min.css' %}" rel="stylesheet">
+    {% if theme %}
+    <style>
+        a { color: {{ theme.link }}; }
+        a:hover { color: {{ theme.primary_hover }}; }
+        .btn-primary {
+            background-color: {{ theme.primary }};
+            border-color: {{ theme.primary }};
+            color: {{ theme.on_primary }};
+        }
+        .btn-primary:hover {
+            background-color: {{ theme.primary_hover }};
+            border-color: {{ theme.primary_hover }};
+            color: {{ theme.on_primary }};
+        }
+        .btn-primary:focus,
+        .btn-primary.focus {
+            box-shadow: 0 0 0 .2rem rgba({{ theme.primary_rgb }}, .5);
+            background-color: {{ theme.primary_hover }};
+            border-color: {{ theme.primary_hover }};
+            color: {{ theme.on_primary }};
+        }
+        .btn-primary:not(:disabled):not(.disabled):active,
+        .btn-primary:not(:disabled):not(.disabled).active {
+            background-color: {{ theme.primary_active }};
+            border-color: {{ theme.primary_active }};
+            color: {{ theme.on_primary }};
+        }
+        .btn-outline-primary { color: {{ theme.primary }}; border-color: {{ theme.primary }}; }
+        .btn-outline-primary:hover {
+            background-color: {{ theme.primary }};
+            border-color: {{ theme.primary }};
+            color: {{ theme.on_primary }};
+        }
+        .badge-primary { background-color: {{ theme.primary }}; }
+        .bg-primary { background-color: {{ theme.primary }} !important; }
+        .text-primary { color: {{ theme.primary }} !important; }
+        .border-left-primary { border-left: .25rem solid {{ theme.primary }} !important; }
+        .bg-gradient-primary {
+            background-color: {{ theme.primary }};
+            background-image: linear-gradient(180deg, {{ theme.primary }} 10%, {{ theme.primary_active }} 100%);
+            background-size: cover;
+        }
+        .form-control:focus,
+        .custom-select:focus {
+            border-color: {{ theme.primary_hover }};
+            box-shadow: 0 0 0 .2rem rgba({{ theme.primary_rgb }}, .25);
+        }
+        .page-link { color: {{ theme.primary }}; }
+        .page-item.active .page-link {
+            background-color: {{ theme.primary }};
+            border-color: {{ theme.primary }};
+        }
+        .dropdown-item.active,
+        .dropdown-item:active { background-color: {{ theme.primary }}; }
+        {% if current_club.background_image %}
+        body {
+            background: url('{{ current_club.background_image.url }}') no-repeat center center fixed;
+            background-size: cover;
+        }
+        #content-wrapper { background-color: rgba(248, 249, 252, .93); }
+        {% endif %}
+    </style>
+    {% endif %}
+</head>
+
+<body id="page-top">
+<div id="wrapper">
+    <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar"
+        {% if theme %}style="background-image: linear-gradient(180deg, {{ theme.secondary }} 10%, {{ theme.secondary_active }} 100%);"{% endif %}>
+        <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{% url 'clubs:home' %}">
+            <div class="sidebar-brand-icon rotate-n-15">
+                {% if current_club.logo %}
+                <img src="{{ current_club.logo.url }}" alt="" style="height:32px">
+                {% else %}
+                <i class="fas fa-fist-raised"></i>
+                {% endif %}
+            </div>
+            <div class="sidebar-brand-text mx-3">{% if current_club %}{{ current_club.name }}{% else %}ClubHub{% endif %}</div>
+        </a>
+        <hr class="sidebar-divider my-0">
+        <li class="nav-item{% if request.resolver_match.view_name == 'clubs:home' %} active{% endif %}">
+            <a class="nav-link" href="{% url 'clubs:home' %}">
+                <i class="fas fa-fw fa-tachometer-alt"></i>
+                <span>{% tr "Startsida" "Allmän" %}</span></a>
+        </li>
+        <hr class="sidebar-divider">
+        <li class="nav-item{% if request.resolver_match.view_name|slice:':7' == 'groups:' %} active{% endif %}">
+            <a class="nav-link" href="{% url 'groups:list' %}">
+                <i class="fas fa-fw fa-users"></i>
+                <span>{% tr "Grupper" "Nav" %}</span></a>
+        </li>
+        <li class="nav-item{% if request.resolver_match.view_name|slice:':9' == 'schedule:' %} active{% endif %}">
+            <a class="nav-link" href="{% url 'schedule:week' %}">
+                <i class="fas fa-fw fa-calendar-alt"></i>
+                <span>{% tr "Schema" "Nav" %}</span></a>
+        </li>
+        <li class="nav-item{% if request.resolver_match.view_name == 'schedule:template_list' %} active{% endif %}">
+            <a class="nav-link" href="{% url 'schedule:template_list' %}">
+                <i class="fas fa-fw fa-copy"></i>
+                <span>{% tr "Mallar" "Nav" %}</span></a>
+        </li>
+        <li class="nav-item{% if request.resolver_match.view_name|slice:':13' == 'notifications' %} active{% endif %}">
+            <a class="nav-link" href="{% url 'notifications:list' %}">
+                <i class="fas fa-fw fa-envelope"></i>
+                <span>{% tr "Meddelanden" "Nav" %}</span></a>
+        </li>
+        {% if user.person.staff_profile.is_admin %}
+        <li class="nav-item{% if request.resolver_match.view_name|slice:':9' == 'payments:' %} active{% endif %}">
+            <a class="nav-link" href="{% url 'payments:list' %}">
+                <i class="fas fa-fw fa-file-invoice-dollar"></i>
+                <span>{% tr "Fakturor" "Nav" %}</span></a>
+        </li>
+        <li class="nav-item{% if request.resolver_match.view_name == 'clubs:settings' %} active{% endif %}">
+            <a class="nav-link" href="{% url 'clubs:settings' %}">
+                <i class="fas fa-fw fa-cog"></i>
+                <span>{% tr "Klubbinställningar" "Nav" %}</span></a>
+        </li>
+        {% endif %}
+        {% if user.is_superuser %}
+        <hr class="sidebar-divider">
+        <li class="nav-item">
+            <a class="nav-link" href="/admin/">
+                <i class="fas fa-fw fa-external-link-alt"></i>
+                <span>{% tr "Admin" "Nav" %}</span></a>
+        </li>
+        {% endif %}
+        <hr class="sidebar-divider d-none d-md-block">
+        <div class="text-center d-none d-md-inline">
+            <button class="rounded-circle border-0" id="sidebarToggle"></button>
+        </div>
+    </ul>
+
+    <div id="content-wrapper" class="d-flex flex-column">
+        <div id="content">
+            <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+                <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+                    <i class="fa fa-bars"></i>
+                </button>
+                <form class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search"
+                      action="#" method="get">
+                    <div class="input-group">
+                        <input type="text" class="form-control bg-light border-0 small" placeholder="{% tr 'Sök' %}..."
+                               aria-label="Sök">
+                        <div class="input-group-append">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-search fa-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item dropdown no-arrow mx-1">
+                        <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
+                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-bell fa-fw"></i>
+                        </a>
+                        <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                             aria-labelledby="alertsDropdown">
+                            <h6 class="dropdown-header">{% tr "Notiscenter" %}</h6>
+                            <span class="dropdown-item text-center small text-gray-500">{% tr "Inga nya notiser." %}</span>
+                        </div>
+                    </li>
+                    <li class="nav-item dropdown no-arrow mx-1">
+                        <a class="nav-link dropdown-toggle" href="#" id="messagesDropdown" role="button"
+                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-envelope fa-fw"></i>
+                        </a>
+                        <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                             aria-labelledby="messagesDropdown">
+                            <h6 class="dropdown-header">{% tr "Meddelandecentral" %}</h6>
+                            <a class="dropdown-item text-center small text-gray-500"
+                               href="{% url 'notifications:list' %}">{% tr "Meddelanden" "Nav" %}</a>
+                        </div>
+                    </li>
+                    <div class="topbar-divider d-none d-sm-block"></div>
+                    <li class="nav-item dropdown no-arrow">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{ user.username }}</span>
+                            <img class="img-profile rounded-circle" src="{% static 'img/undraw_profile.svg' %}">
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                             aria-labelledby="userDropdown">
+                            {% if user.person.staff_profile.is_admin %}
+                            <a class="dropdown-item" href="{% url 'clubs:settings' %}">
+                                <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
+                                {% tr "Klubbinställningar" "Nav" %}
+                            </a>
+                            {% endif %}
+                            <a class="dropdown-item" href="{% url 'password_change' %}">
+                                <i class="fas fa-key fa-sm fa-fw mr-2 text-gray-400"></i>
+                                {% tr "Byt lösenord" "Konton" %}
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+                                <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+                                {% tr "Logga ut" "Nav" %}
+                            </a>
+                        </div>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="container-fluid">
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Stäng">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+
+        <footer class="sticky-footer bg-white">
+            <div class="container my-auto">
+                <div class="copyright text-center my-auto">
+                    <span>ClubHub &copy; {% now "Y" %}</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+</div>
+
+<a class="scroll-to-top rounded" href="#page-top">
+    <i class="fas fa-angle-up"></i>
+</a>
+
+<div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{% tr "Logga ut" "Nav" %}</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Stäng">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">{% tr "Vill du avsluta din nuvarande session?" %}</div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">{% tr "Avbryt" %}</button>
+                <form method="post" action="{% url 'logout' %}" class="mb-0">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">{% tr "Logga ut" "Nav" %}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
+<script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'vendor/jquery-easing/jquery.easing.min.js' %}"></script>
+<script src="{% static 'js/sb-admin-2.min.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.4/dist/htmx.min.js"></script>
+<script>
+    document.body.addEventListener("htmx:configRequest", function (event) {
+        event.detail.headers["X-CSRFToken"] = "{{ csrf_token }}";
+    });
+</script>
+{% block extra_scripts %}{% endblock %}
+</body>
+
+</html>

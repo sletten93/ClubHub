@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load tr %}
+{% block title %}{{ group.name }}{% endblock %}
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">{{ group.name }}</h1>
+    <div>
+        <a class="btn btn-sm btn-outline-secondary shadow-sm" href="{% url 'groups:update' group.pk %}">
+            <i class="fas fa-edit fa-sm"></i> {% tr "Ändra" %}</a>
+        <a class="btn btn-sm btn-outline-danger shadow-sm" href="{% url 'groups:delete' group.pk %}">
+            <i class="fas fa-trash fa-sm"></i> {% tr "Ta bort" %}</a>
+    </div>
+</div>
+<p class="text-gray-500">{{ group.description|default:"-" }}</p>
+
+<div class="row">
+    <div class="col-lg-7">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">{% tr "Deltagare och tränare" "Grupper" %}</h6>
+            </div>
+            <div class="card-body">
+                {% if memberships %}
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr><th>{% tr "Namn" %}</th><th>{% tr "Roll" "Grupper" %}</th><th>{% tr "Startdatum" "Grupper" %}</th><th style="width:90px"></th></tr>
+                        </thead>
+                        <tbody>
+                            {% for membership in memberships %}
+                            <tr>
+                                <td>{{ membership.person.last_name }}, {{ membership.person.first_name }}</td>
+                                <td>
+                                    {% if membership.role == "trainer" %}<span class="badge badge-info">{% tr "Tränare" "Grupper" %}</span>
+                                    {% else %}<span class="badge badge-secondary">{% tr "Medlem" "Grupper" %}</span>{% endif %}
+                                </td>
+                                <td>{{ membership.joined_on|date:"Y-m-d" }}</td>
+                                <td>
+                                    <form method="post" action="{% url 'groups:membership_remove' group.pk membership.person_id %}" class="mb-0">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger btn-circle">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">{% tr "Inga deltagare än." "Grupper" %}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">{% tr "Lägg till person" "Grupper" %}</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'groups:membership_add' group.pk %}">
+                    {% csrf_token %}
+                    <div class="row align-items-end">
+                        <div class="col-md-7 form-group mb-0">{{ membership_form.person }}</div>
+                        <div class="col-md-3 form-group mb-0">{{ membership_form.role }}</div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary btn-block">{% tr "Lägg till" %}</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">{% tr "Kommande aktiviteter" "Grupper" %}</h6>
+            </div>
+            {% if upcoming_activities %}
+            <ul class="list-group list-group-flush">
+                {% for activity in upcoming_activities %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>
+                        <strong>{{ activity.date|date:"Y-m-d D" }}</strong>
+                        {{ activity.start_time|time:"H:i" }}
+                        {{ activity.title }}
+                    </span>
+                    <a class="btn btn-sm btn-outline-primary" href="{% url 'attendance:take' activity.pk %}">{% tr "Närvaro" "Startsida" %}</a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="card-body text-muted">{% tr "Inga kommande aktiviteter." "Startsida" %}</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

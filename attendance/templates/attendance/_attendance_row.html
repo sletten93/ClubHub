@@ -1,0 +1,17 @@
+{% load tr %}
+<tr id="member-row-{{ person.pk }}">
+    <td>{{ person.last_name }}, {{ person.first_name }}</td>
+    <td>
+        <div class="btn-group btn-group-sm" role="group">
+            {% for option in statuses %}
+            <button type="button"
+                    title="{% tr option.label 'Närvaro' %}"
+                    class="btn {% if current == option.value %}btn-{{ option.color }}{% else %}btn-outline-{{ option.color }}{% endif %}"
+                    hx-post="{% url 'attendance:record' activity.pk person.pk %}"
+                    hx-vals='{"status": "{{ option.value }}"}'
+                    hx-target="#member-row-{{ person.pk }}"
+                    hx-swap="outerHTML">{% tr option.label "Närvaro" %}</button>
+            {% endfor %}
+        </div>
+    </td>
+</tr>

@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% load tr %}
+{% block title %}{% tr "Startsida" "Allmän" %}{% endblock %}
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <div class="d-flex align-items-center">
+        {% if current_club.logo %}
+        <img src="{{ current_club.logo.url }}" alt="{{ current_club.name }}" style="height:56px" class="mr-3">
+        {% endif %}
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">{% tr "Hej" "Startsida" %} {{ person.first_name }}</h1>
+            <div class="text-gray-500">{{ current_club.name }}</div>
+        </div>
+    </div>
+    <a class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"
+       href="{% url 'schedule:week' %}">
+        <i class="fas fa-calendar-alt fa-sm text-white-50"></i> {% tr "Veckans schema" "Startsida" %}
+    </a>
+</div>
+
+{% if stats %}
+<div class="row">
+    {% for label, value in stats.items %}
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">{{ label }}</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ value }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">{% tr "Idag" "Startsida" %}, {{ today|date:"Y-m-d (D)" }}</h6>
+    </div>
+    {% if todays_activities %}
+    <div class="table-responsive">
+        <table class="table table-bordered" width="100%" cellspacing="0">
+            <thead>
+                <tr><th style="width:110px">{% tr "Tid" %}</th><th>{% tr "Aktivitet" "Schema" %}</th><th>{% tr "Grupp" %}</th><th>{% tr "Plats" %}</th><th style="width:170px"></th></tr>
+            </thead>
+            <tbody>
+                {% for activity in todays_activities %}
+                <tr {% if activity.is_cancelled %}class="text-decoration-line-through"{% endif %}>
+                    <td>{{ activity.start_time|time:"H:i" }}&ndash;{{ activity.end_time|time:"H:i" }}</td>
+                    <td>{{ activity.title }}</td>
+                    <td>{{ activity.group.name }}</td>
+                    <td>{{ activity.location|default:"-" }}</td>
+                    <td>
+                        <a class="btn btn-sm btn-primary" href="{% url 'attendance:take' activity.pk %}">{% tr "Närvaro" "Startsida" %}</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="{% url 'schedule:activity_update' activity.pk %}">{% tr "Ändra" %}</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="card-body text-muted">{% tr "Inga aktiviteter idag." "Startsida" %}</div>
+    {% endif %}
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">{% tr "Kommande 7 dagar" "Startsida" %}</h6>
+    </div>
+    {% if upcoming_activities %}
+    <ul class="list-group list-group-flush">
+        {% for activity in upcoming_activities %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>
+                <strong>{{ activity.date|date:"Y-m-d D" }}</strong>
+                {{ activity.start_time|time:"H:i" }} {{ activity.title }}
+                <span class="text-gray-500">&middot; {{ activity.group.name }}</span>
+            </span>
+            <a class="btn btn-sm btn-outline-primary" href="{% url 'attendance:take' activity.pk %}">{% tr "Närvaro" "Startsida" %}</a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <div class="card-body text-muted">{% tr "Inga kommande aktiviteter." "Startsida" %}</div>
+    {% endif %}
+</div>
+{% endblock %}
