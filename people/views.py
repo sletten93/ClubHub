@@ -1,6 +1,16 @@
 import json
+from datetime import date, timedelta
 
 from django.contrib import messages
+from django.db.models import (
+    CharField,
+    Exists,
+    F,
+    OuterRef,
+    Q,
+    Value,
+)
+from django.db.models.functions import Concat, Substr
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
@@ -13,25 +23,236 @@ from django.views.generic import (
     View,
 )
 
+from clubs.mixins import TablePaginationMixin
 from clubs.translations import translate
+from groups.models import GroupMembership
 from people.mixins import AdminRequiredMixin
 
 from . import services
 from .forms import PersonForm
 from .sportadmin import import_person_rows, parse_sportadmin_personregister
-from .models import Person
+from .models import GuardianRelation, Membership, Person
 
 
-class PersonRegisterView(AdminRequiredMixin, ListView):
+ROLE_FILTERS = ("member", "trainer", "guardian", "other")
+PAYMENT_FILTERS = ("paid", "partly", "unpaid")
+GENDER_FILTERS = tuple(Person.Gender.values)
+AGE_FILTERS = ("over15", "under15")
+
+# Applied when the register is opened without an explicit filter
+# submission. The form posts a `filters_set` marker on every request, so
+# "unchecked" can be told apart from "never submitted". Persons with no
+# gender set match none of the gender filters.
+DEFAULT_ROLES = ("member", "trainer")
+DEFAULT_PAYMENTS = ("paid", "partly", "unpaid")
+DEFAULT_AGES = ("over15", "under15")
+DEFAULT_GENDERS = GENDER_FILTERS
+
+
+class PersonRegisterView(TablePaginationMixin, AdminRequiredMixin, ListView):
+    """Person register with search, filters and sortable columns."""
+
     template_name = "people/person_register.html"
     context_object_name = "people"
 
+    # Whitelisted sort keys -> model fields. Names are the stable tiebreaker
+    # for all other columns so equal values keep a predictable order.
+    SORT_FIELDS = {
+        "nr": ["member_number"],
+        "name": ["last_name", "first_name"],
+        "pnr": ["personnummer"],
+        "email": ["email"],
+        "phone": ["phone_mobile"],
+    }
+
+    def _parse_params(self):
+        params = self.request.GET
+        self._search = params.get("q", "").strip()
+        if "filters_set" in params:
+            self._roles = [f for f in params.getlist("role") if f in ROLE_FILTERS]
+            self._payments = [f for f in params.getlist("payment") if f in PAYMENT_FILTERS]
+            self._ages = [f for f in params.getlist("age") if f in AGE_FILTERS]
+            self._genders = [f for f in params.getlist("gender") if f in GENDER_FILTERS]
+        else:
+            self._roles = list(DEFAULT_ROLES)
+            self._payments = list(DEFAULT_PAYMENTS)
+            self._ages = list(DEFAULT_AGES)
+            self._genders = list(DEFAULT_GENDERS)
+        sort = params.get("sort", "nr")
+        self._sort = sort if sort in self.SORT_FIELDS else "nr"
+        direction = params.get("dir", "asc")
+        self._direction = direction if direction in ("asc", "desc") else "asc"
+
     def get_queryset(self):
-        return (
+        self._parse_params()
+        queryset = (
             Person.objects.filter(club=services.get_person(self.request.user).club)
             .select_related("user")
-            .order_by("last_name", "first_name")
+            .annotate(
+                # Combined first + last name so "Anna Andersson" matches as-is.
+                search_name=Concat(
+                    "first_name", Value(" "), "last_name", output_field=CharField()
+                )
+            )
         )
+
+        if self._search:
+            query = (
+                Q(member_number__icontains=self._search)
+                | Q(first_name__icontains=self._search)
+                | Q(last_name__icontains=self._search)
+                | Q(personnummer__icontains=self._search)
+                | Q(email__icontains=self._search)
+                | Q(phone_mobile__icontains=self._search)
+                | Q(search_name__icontains=self._search)
+            )
+            queryset = queryset.filter(query)
+
+        membership_of = Membership.objects.filter(person=OuterRef("pk"))
+
+        if self._roles:
+            # All three markers are annotated whenever roles are filtered so
+            # "other" (no marker at all) can negate them.
+            queryset = queryset.annotate(
+                has_membership=Exists(membership_of),
+                has_trainer_role=Exists(
+                    GroupMembership.objects.filter(
+                        person=OuterRef("pk"), role=GroupMembership.Role.TRAINER
+                    )
+                ),
+                has_guarded_children=Exists(
+                    GuardianRelation.objects.filter(guardian=OuterRef("pk"))
+                ),
+            )
+            role_query = Q()
+            if "member" in self._roles:
+                role_query |= Q(has_membership=True)
+            if "trainer" in self._roles:
+                role_query |= Q(has_trainer_role=True)
+            if "guardian" in self._roles:
+                role_query |= Q(has_guarded_children=True)
+            if "other" in self._roles:
+                role_query |= (
+                    Q(has_membership=False)
+                    & Q(has_trainer_role=False)
+                    & Q(has_guarded_children=False)
+                )
+            queryset = queryset.filter(role_query)
+
+
+        if self._payments:
+            annotations = {}
+            if "paid" in self._payments:
+                annotations["has_paid_membership"] = Exists(
+                    membership_of.filter(payment_status=Membership.PaymentStatus.PAID)
+                )
+            if "partly" in self._payments:
+                annotations["has_partly_paid_membership"] = Exists(
+                    membership_of.filter(
+                        payment_status=Membership.PaymentStatus.PARTLY_PAID
+                    )
+                )
+            if "unpaid" in self._payments:
+                annotations["has_unpaid_membership"] = Exists(
+                    membership_of.filter(payment_status=Membership.PaymentStatus.UNPAID)
+                )
+            queryset = queryset.annotate(**annotations)
+            payment_query = Q()
+            if "paid" in self._payments:
+                payment_query |= Q(has_paid_membership=True)
+            if "partly" in self._payments:
+                payment_query |= Q(has_partly_paid_membership=True)
+            if "unpaid" in self._payments:
+                payment_query |= Q(has_unpaid_membership=True)
+            queryset = queryset.filter(payment_query)
+
+        if self._genders:
+            queryset = queryset.filter(gender__in=self._genders)
+
+        if self._ages:
+            # Age is derived from the personnummer date part (first 8 chars).
+            # Persons without a personnummer match neither filter.
+            today = date.today()
+            try:
+                cutoff = today.replace(year=today.year - 15)
+            except ValueError:  # born on 29 February
+                cutoff = today.replace(year=today.year - 15, day=28)
+            next_day = cutoff + timedelta(days=1)
+            queryset = queryset.annotate(
+                birth_date_part=Substr("personnummer", 1, 8, output_field=CharField())
+            )
+            age_query = Q()
+            if "over15" in self._ages:
+                age_query |= Q(birth_date_part__lte=cutoff.strftime("%Y%m%d"))
+            if "under15" in self._ages:
+                age_query |= Q(birth_date_part__gte=next_day.strftime("%Y%m%d"))
+            queryset = queryset.filter(age_query)
+
+        ordering = []
+        for name in self.SORT_FIELDS[self._sort]:
+            field = F(name)
+            ordering.append(
+                field.desc(nulls_last=True)
+                if self._direction == "desc"
+                else field.asc(nulls_last=True)
+            )
+        if self._sort != "name":
+            ordering.extend([F("last_name").asc(), F("first_name").asc()])
+        return queryset.order_by(*ordering)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        base_params = self.request.GET.copy()
+        for key in ("sort", "dir", "page"):
+            base_params.pop(key, None)
+
+        def sort_url(key, direction):
+            params = base_params.copy()
+            params["sort"] = key
+            params["dir"] = direction
+            return f"?{params.urlencode()}"
+
+        columns = []
+        for key, label, width in (
+            ("nr", translate("Nr", "Personregister"), "70px"),
+            ("name", translate("Namn"), None),
+            ("pnr", translate("Personnummer", "Personregister"), None),
+            ("email", translate("E-post", "Personregister"), None),
+            ("phone", translate("Mobiltelefon", "Personregister"), None),
+        ):
+            # Inactive columns advertise ascending sort on hover; the active
+            # column shows its current direction and toggles when clicked.
+            # Ascending shows a down arrow, descending an up arrow.
+            if key == self._sort and self._direction == "desc":
+                url, icon = sort_url(key, "asc"), "fa-arrow-up"
+            else:
+                url, icon = sort_url(key, "desc"), "fa-arrow-down"
+            columns.append(
+                {"key": key, "label": label, "width": width, "url": url, "icon": icon}
+            )
+
+        context.update(
+            {
+                "search": self._search,
+                "active_filters": {
+                    "role": self._roles,
+                    "payment": self._payments,
+                    "age": self._ages,
+                    "gender": self._genders,
+                },
+                "is_filtered": bool(
+                    self._search
+                    or self._roles
+                    or self._payments
+                    or self._ages
+                    or self._genders
+                ),
+                "sort": self._sort,
+                "dir": self._direction,
+                "columns": columns,
+            }
+        )
+        return context
 
 
 class PersonCreateView(AdminRequiredMixin, CreateView):

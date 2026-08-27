@@ -9886,6 +9886,156 @@ a:focus {
   }
 }
 
+/* ------------------------------------------------------------------ */
+/* Personregister: sortable headers, search and filter controls       */
+/* ------------------------------------------------------------------ */
+
+table thead th a.th-sort-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  color: #f8f9fa;
+  text-decoration: none;
+}
+
+table thead th a.th-sort-link:hover,
+table thead th a.th-sort-link:focus {
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.th-sort-icon {
+  margin-left: 0.35rem;
+  font-size: 0.7rem;
+  color: #f8f9fa;
+  visibility: hidden;
+  opacity: 0.5;
+  transition: opacity 0.15s ease;
+}
+
+table thead th.active-sort .th-sort-icon {
+  visibility: visible;
+  opacity: 1;
+}
+
+table thead th:not(.active-sort):hover .th-sort-icon,
+table thead th:not(.active-sort) .th-sort-link:hover .th-sort-icon {
+  visibility: visible;
+  opacity: 0.5;
+}
+
+.dropdown-menu .person-filter-option {
+  display: flex;
+  align-items: center;
+}
+
+.dropdown-menu .person-filter-option input[type="checkbox"] {
+  margin-right: 0.5rem;
+}
+
+#person-filter-form .btn.bg-light:hover {
+  background-color: #e9ecef !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* Data table card: header/footer bars + pagination (reusable)        */
+/* ------------------------------------------------------------------ */
+
+.ch-table-card {
+  background-color: #ffffff;
+  border: 1px solid #e3e6f0;
+  border-radius: 0.35rem;
+  overflow: hidden;
+}
+
+.ch-table-card-header,
+.ch-table-card-footer {
+  background-color: #ffffff;
+  padding: 0.66rem 0.75rem;
+}
+
+.ch-page-bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+}
+
+.ch-page-size {
+  justify-self: start;
+}
+
+.ch-page-nav {
+  justify-self: center;
+}
+
+.ch-page-entries {
+  justify-self: end;
+}
+
+.ch-table-card-empty {
+  padding: 0.55rem 0.75rem;
+}
+
+.ch-table {
+  margin-bottom: 0;
+}
+
+/* Rows ~40% thinner than the Bootstrap default (0.75rem -> 0.44rem). */
+.ch-table th,
+.ch-table td {
+  padding: 0.44rem 0.75rem;
+}
+
+.ch-btn-xs {
+  padding: 0.05rem 0.4rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  border-radius: 0.2rem;
+}
+
+.ch-page-size,
+.ch-page-nav {
+  display: flex;
+  align-items: center;
+}
+
+.ch-page-size .ch-page-size-btn {
+  margin-left: 0.35rem;
+  background-color: transparent;
+  color: #858796;
+}
+
+.ch-page-size .ch-page-size-btn:hover {
+  color: #60616f;
+  text-decoration: none;
+}
+
+.ch-page-size .ch-page-size-btn.active {
+  background-color: rgba(54, 185, 204, 0.25);
+  color: #36b9cc;
+}
+
+.ch-page-arrow {
+  color: #343a40;
+  padding: 0 0.4rem;
+}
+
+.ch-page-arrow:hover {
+  color: #000000;
+}
+
+.ch-page-arrow.disabled {
+  color: #858796;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.ch-page-number,
+.ch-page-entries {
+  padding: 0 0.4rem;
+}
+
 @keyframes fadeIn {
   0% {
     opacity: 0;
@@ -11300,4 +11450,89 @@ footer.sticky-footer .copyright {
 
 body.sidebar-toggled footer.sticky-footer {
   width: 100%;
+}
+
+/* --- Floating border labels -------------------------------------------
+   Labels sit on the input's top border (Material-style notch). The white
+   background matches card-body, which is where all forms render. */
+.ch-float {
+  position: relative;
+}
+
+.ch-float > .ch-float-label {
+  position: absolute;
+  top: -0.7em;
+  left: 0.75rem;
+  z-index: 10;
+  margin: 0;
+  padding: 0 0.35rem;
+  line-height: 1.15;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #858796;
+  background-color: #fff;
+  pointer-events: none;
+}
+
+.ch-float:focus-within > .ch-float-label {
+  color: var(--ch-primary, #4e73df);
+}
+
+/* Many app forms render bare widgets (no form-control class), so give every
+   control inside a floating group the SB Admin 2 form-control baseline. */
+.ch-float > input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="color"]):not(.form-control),
+.ch-float > textarea:not(.form-control),
+.ch-float > select:not(.form-control) {
+  display: block;
+  width: 100%;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #6e707e;
+  background-color: #fff;
+  border: 1px solid #d1d3e2;
+  border-radius: 0.35rem;
+  box-shadow: none;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+/* Radio/checkbox collections (RadioSelect) render a wrapper div — give it
+   the bordered box the floating label sits on */
+.ch-float > div {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d3e2;
+  border-radius: 0.35rem;
+  background-color: #fff;
+}
+
+.ch-float > input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="color"]):not(.form-control),
+.ch-float > select:not(.form-control):not([multiple]) {
+  height: calc(2.25rem + 2px);
+}
+
+.ch-float > textarea:not(.form-control) {
+  height: auto;
+}
+
+/* Native single selects get the Bootstrap chevron */
+.ch-float > select:not(.form-control):not([multiple]) {
+  padding-right: 1.75rem;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  color: #6c757d;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3e%3cpath fill='%235a5c69' d='M2 0L0 2h4zm0 5L0 3h4z'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 8px 10px;
+}
+
+/* Bare controls miss the themed .form-control:focus ring — mirror it */
+.ch-float > input:not(.form-control):focus,
+.ch-float > textarea:not(.form-control):focus,
+.ch-float > select:not(.form-control):focus {
+  border-color: var(--ch-primary, #bac8f3);
+  box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+  outline: 0;
 }

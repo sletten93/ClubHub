@@ -12,8 +12,15 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 
 from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+import django.forms
+
+# Build paths inside of BASE_DIR like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Render forms through the project template engine so templates/django/forms/
+# can override Django's built-in form templates (e.g. as_p label placement).
+# Django's own form/widget templates must stay resolvable, hence the extra DIR.
+FORM_RENDERER = "django.forms.renderers.TemplatesSetting"
 
 
 # Quick-start development settings - unsuitable for production
@@ -63,7 +70,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [BASE_DIR / 'templates', Path(django.forms.__file__).parent / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

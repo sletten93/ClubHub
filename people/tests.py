@@ -1,5 +1,6 @@
 import io
 from datetime import date
+from urllib.parse import parse_qs
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -374,3 +375,286 @@ class AuthFlowTests(TestCase):
     def test_home_requires_login(self):
         response = self.client.get(reverse("clubs:home"))
         self.assertEqual(response.status_code, 302)
+
+
+class PersonRegisterViewTests(TestCase):
+    def setUp(self):
+        self.club = Club.objects.create(name="Register BK", slug="registerbk")
+        self.admin_user = User.objects.create_user(username="boss", password="pw12345!")
+        admin_person = Person.objects.create(
+            club=self.club,
+            first_name="Anna",
+            last_name="Admin",
+            user=self.admin_user,
+        )
+        StaffProfile.objects.create(person=admin_person, is_admin=True)
+        self.client.force_login(self.admin_user)
+
+    def make_person(self, first_name, last_name, **kwargs):
+        return Person.objects.create(
+            club=self.club, first_name=first_name, last_name=last_name, **kwargs
+        )
+
+    @staticmethod
+    def pnr_for_age(age):
+        """Valid personnummer for a person born on Jan 1, ~age years ago."""
+        year = (date.today().year - age) % 100
+        return complete_pnr(f"{year:02d}0101123")
+
+    def get(self, **params):
+        # The real filter form always posts `filters_set`; without it the
+        # view applies the default filters. Tests opt out explicitly.
+        params.setdefault("filters_set", "1")
+        return self.client.get(reverse("people:register"), params)
+
+    def test_search_matches_name_and_member_number(self):
+        bengt = self.make_person("Bengt", "Berg")
+        self.make_person("Cecilia", "Carlsson")
+        response = self.get(q="bengt")
+        self.assertContains(response, "Berg")
+        self.assertNotContains(response, "Carlsson")
+        response = self.get(q=bengt.member_number)
+        self.assertContains(response, "Bengt")
+        self.assertNotContains(response, "Cecilia")
+
+    def test_search_matches_full_name(self):
+        self.make_person("Anna", "Svensson")
+        self.make_person("Anna", "Andersson")
+        response = self.get(q="Anna Svensson")
+        self.assertContains(response, "Svensson")
+        self.assertNotContains(response, "Andersson")
+
+    def test_headers_are_sort_links_with_arrow_icons(self):
+        response = self.get()
+        self.assertContains(response, "th-sort-link", count=5)
+        self.assertContains(response, "fa-arrow-down")
+
+    def test_sort_column_toggles_direction_and_icon(self):
+        columns = {col["key"]: col for col in self.get().context["columns"]}
+        self.assertEqual(columns["name"]["icon"], "fa-arrow-down")
+        self.assertIn("sort=name", columns["name"]["url"])
+        self.assertIn("dir=desc", columns["name"]["url"])
+
+        columns = {
+            col["key"]: col
+            for col in self.get(sort="name", dir="desc").context["columns"]
+        }
+        self.assertEqual(columns["name"]["icon"], "fa-arrow-up")
+        self.assertIn("dir=asc", columns["name"]["url"])
+
+    def test_sort_by_member_number_and_name(self):
+        self.make_person("Cecilia", "Carlsson")
+        self.make_person("Bengt", "Berg")
+        response = self.get(sort="nr", dir="asc")
+        names = [p.last_name for p in response.context["people"]]
+        # The admin was created first -> member number 0001.
+        self.assertEqual(names, ["Admin", "Carlsson", "Berg"])
+        response = self.get(sort="name", dir="desc")
+        names = [p.last_name for p in response.context["people"]]
+        self.assertEqual(names, ["Carlsson", "Berg", "Admin"])
+
+    def test_sort_preserves_search_and_filters(self):
+        self.make_person("Bengt", "Berg", email="berg@example.com")
+        response = self.get(q="berg", sort="email", dir="desc")
+        self.assertIn("q=berg", response.context["columns"][0]["url"])
+        self.assertIn("sort=nr", response.context["columns"][0]["url"])
+        self.assertIn("dir=desc", response.context["columns"][0]["url"])
+
+    def test_role_filters(self):
+        member = self.make_person("Mimmi", "Medlem")
+        Membership.objects.create(person=member, start_date=date(2026, 1, 1))
+        trainer = self.make_person("Tore", "Tranare")
+        StaffProfile.objects.create(person=trainer)
+        group = Group.objects.create(club=self.club, name="Grupp A")
+        GroupMembership.objects.create(
+            group=group, person=trainer, role=GroupMembership.Role.TRAINER
+        )
+        child = self.make_person("Kalle", "Barn")
+        guardian = self.make_person("Gunilla", "Foralder")
+        GuardianRelation.objects.create(guardian=guardian, child=child)
+
+        response = self.get(role="member")
+        self.assertEqual({p.last_name for p in response.context["people"]}, {"Medlem"})
+        response = self.get(role="trainer")
+        self.assertEqual({p.last_name for p in response.context["people"]}, {"Tranare"})
+        response = self.get(role="guardian")
+        self.assertEqual({p.last_name for p in response.context["people"]}, {"Foralder"})
+        response = self.get(role=["member", "trainer"])
+        self.assertEqual(
+            {p.last_name for p in response.context["people"]},
+            {"Medlem", "Tranare"},
+        )
+        # "Other" = none of the role markers; the admin and the child
+        # (guardianship marks the guardian, not the child) are plain persons.
+        response = self.get(role="other")
+        self.assertEqual({p.last_name for p in response.context["people"]}, {"Admin", "Barn"})
+        # Every role selected, including "other", matches everyone.
+        response = self.get(role=["member", "trainer", "guardian", "other"])
+        self.assertEqual(
+            {p.last_name for p in response.context["people"]},
+            {"Medlem", "Tranare", "Foralder", "Admin", "Barn"},
+        )
+
+    def test_payment_filters(self):
+        payer = self.make_person("Par", "Betald")
+        Membership.objects.create(
+            person=payer,
+            start_date=date(2026, 1, 1),
+            payment_status=Membership.PaymentStatus.PAID,
+        )
+        debtor = self.make_person("Doris", "Obetald")
+        Membership.objects.create(
+            person=debtor,
+            start_date=date(2026, 1, 1),
+            payment_status=Membership.PaymentStatus.UNPAID,
+        )
+        halffer = self.make_person("Hugo", "Halvbetald")
+        Membership.objects.create(
+            person=halffer,
+            start_date=date(2026, 1, 1),
+            payment_status=Membership.PaymentStatus.PARTLY_PAID,
+        )
+        response = self.get(payment="paid")
+        self.assertEqual({p.last_name for p in response.context["people"]}, {"Betald"})
+        response = self.get(payment="partly")
+        self.assertEqual({p.last_name for p in response.context["people"]}, {"Halvbetald"})
+        response = self.get(payment="unpaid")
+        self.assertEqual({p.last_name for p in response.context["people"]}, {"Obetald"})
+        response = self.get(payment=["paid", "partly", "unpaid"])
+        self.assertEqual(
+            {p.last_name for p in response.context["people"]},
+            {"Betald", "Halvbetald", "Obetald"},
+        )
+
+    def test_gender_filters(self):
+        man = self.make_person("Mats", "Man", gender=Person.Gender.MALE)
+        woman = self.make_person("Karin", "Kvinna", gender=Person.Gender.FEMALE)
+        non_binary = self.make_person("Kim", "Ickebinary", gender=Person.Gender.NON_BINARY)
+        self.make_person("Nils", "Okant")  # no gender set
+
+        response = self.get(gender="male")
+        self.assertEqual({p.last_name for p in response.context["people"]}, {"Man"})
+        response = self.get(gender="female")
+        self.assertEqual({p.last_name for p in response.context["people"]}, {"Kvinna"})
+        response = self.get(gender="non_binary")
+        self.assertEqual({p.last_name for p in response.context["people"]}, {"Ickebinary"})
+        response = self.get(gender=["male", "female", "non_binary"])
+        self.assertEqual(
+            {p.last_name for p in response.context["people"]},
+            {"Man", "Kvinna", "Ickebinary"},
+        )
+        # All three unselected clears the gender filter entirely.
+        response = self.get(gender="")
+        self.assertEqual(
+            {p.last_name for p in response.context["people"]},
+            {man.last_name, woman.last_name, non_binary.last_name, "Okant", "Admin"},
+        )
+
+    def test_age_filters(self):
+        self.make_person("Astrid", "Vuxen", personnummer=self.pnr_for_age(20))
+        self.make_person("Kenny", "Barn", personnummer=self.pnr_for_age(3))
+        # Without personnummer the age cannot be determined -> matches neither.
+        self.make_person("Namnlos", "Okand")
+        response = self.get(age="over15")
+        self.assertEqual({p.last_name for p in response.context["people"]}, {"Vuxen"})
+        response = self.get(age="under15")
+        self.assertEqual({p.last_name for p in response.context["people"]}, {"Barn"})
+
+    def test_unknown_sort_params_fall_back_to_member_number(self):
+        response = self.get(sort="hacker", dir="sideways")
+        self.assertEqual(response.context["sort"], "nr")
+        self.assertEqual(response.context["dir"], "asc")
+
+    def test_defaults_sort_by_member_number_and_filter_all_but_guardian(self):
+        member = self.make_person(
+            "Mimmi", "Medlem", personnummer=self.pnr_for_age(20),
+            gender=Person.Gender.FEMALE,
+        )
+        Membership.objects.create(person=member, start_date=date(2026, 1, 1))
+        guardian = self.make_person("Gunilla", "Foralder")
+        child = self.make_person("Kalle", "Barn", personnummer=self.pnr_for_age(3))
+        GuardianRelation.objects.create(guardian=guardian, child=child)
+        untagged = self.make_person("Nils", "Ingen")
+
+        # First visit: no query params at all, so the defaults kick in.
+        response = self.client.get(reverse("people:register"))
+        # Defaults: sorted by member number asc; members + trainers +
+        # all ages shown, guardians without membership are not.
+        self.assertEqual((response.context["sort"], response.context["dir"]), ("nr", "asc"))
+        self.assertEqual(
+            {p.last_name for p in response.context["people"]}, {"Medlem"}
+        )
+
+        # Submitting the form with every box unchecked clears the filters.
+        response = self.get(filters_set="1")
+        self.assertEqual(
+            {p.last_name for p in response.context["people"]},
+            {"Medlem", "Foralder", "Barn", "Ingen", "Admin"},
+        )
+
+    def test_filtered_empty_shows_match_message(self):
+        response = self.get(q="finnsinte")
+        self.assertContains(response, "Inga personer matchar sökningen eller filtret.")
+        self.assertNotContains(response, "Inga personer registrerade ännu.")
+
+    def test_pagination_defaults_and_page_size_links(self):
+        response = self.get()
+        self.assertEqual(response.context["per_page"], 40)
+        options = {o["value"]: o for o in response.context["per_page_options"]}
+        self.assertEqual(set(options), {40, 60, 100})
+        self.assertTrue(options[40]["active"])
+        self.assertFalse(options[60]["active"])
+        query = parse_qs(options[60]["url"].lstrip("?"))
+        self.assertEqual(query["per_page"], ["60"])
+        # Changing page size resets to the first page.
+        self.assertNotIn("page", query)
+
+    def test_invalid_per_page_falls_back_to_default(self):
+        response = self.get(per_page="9999")
+        self.assertEqual(response.context["per_page"], 40)
+        response = self.get(per_page="nonsense")
+        self.assertEqual(response.context["per_page"], 40)
+
+    def test_pagination_pages_and_entry_counts(self):
+        for index in range(45):
+            self.make_person("Först", f"Person{index:02d}")
+        # 45 created + the admin = 46 people.
+        response = self.get()
+        self.assertEqual(response.context["entries_total"], 46)
+        self.assertEqual(response.context["entries_start"], 1)
+        self.assertEqual(response.context["entries_end"], 40)
+        query = parse_qs(response.context["next_page_url"].lstrip("?"))
+        self.assertEqual(query["page"], ["2"])
+        self.assertIsNone(response.context["prev_page_url"])
+        self.assertEqual(len(response.context["people"]), 40)
+
+        response = self.get(page="2")
+        self.assertEqual(response.context["entries_start"], 41)
+        self.assertEqual(response.context["entries_end"], 46)
+        self.assertEqual(len(response.context["people"]), 6)
+        query = parse_qs(response.context["prev_page_url"].lstrip("?"))
+        self.assertEqual(query["page"], ["1"])
+        self.assertIsNone(response.context["next_page_url"])
+        # Page-size links keep working from page 2 (and drop the page param).
+        options = {o["value"]: o for o in response.context["per_page_options"]}
+        query = parse_qs(options[100]["url"].lstrip("?"))
+        self.assertEqual(query["per_page"], ["100"])
+        self.assertNotIn("page", query)
+
+    def test_pagination_preserves_search_and_sort(self):
+        for index in range(45):
+            self.make_person("Först", f"Person{index:02d}", email="berg@example.com")
+        response = self.get(q="berg", sort="nr", dir="desc", page="1")
+        # Search survives pagination links.
+        query = parse_qs(response.context["next_page_url"].lstrip("?"))
+        self.assertEqual(query.get("q"), ["berg"])
+        self.assertEqual(query.get("sort"), ["nr"])
+        self.assertEqual(query.get("dir"), ["desc"])
+        # Sorting resets to page 1; the active column toggles back to asc.
+        columns = {col["key"]: col for col in response.context["columns"]}
+        query = parse_qs(columns["nr"]["url"].lstrip("?"))
+        self.assertNotIn("page", query)
+        self.assertEqual(query.get("q"), ["berg"])
+        self.assertEqual(query.get("dir"), ["asc"])
+        self.assertEqual(query.get("sort"), ["nr"])
+

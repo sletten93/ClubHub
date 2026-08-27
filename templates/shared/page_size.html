@@ -1,0 +1,10 @@
+{% load tr %}
+<span class="ch-page-size">
+    <span class="text-dark">{% tr "Rader per sida:" "Allmän" %}</span>
+    {% for option in per_page_options %}
+    <a href="{{ option.url }}"
+       class="ch-btn-xs ch-page-size-btn {% if option.active %}active{% endif %}">
+        {{ option.value }}
+    </a>
+    {% endfor %}
+</span>

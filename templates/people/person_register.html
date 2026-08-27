@@ -19,16 +19,116 @@
         </a>
     </div>
 </div>
-{% if people %}
-<div class="table-responsive">
-    <table class="table table-bordered" width="100%" cellspacing="0">
+{% if people or is_filtered %}
+<form method="get" action="{% url 'people:register' %}" id="person-filter-form" class="mb-3">
+    <div class="d-flex align-items-center flex-wrap">
+        <div class="d-flex align-items-center mr-2">
+            <input type="text" name="q" value="{{ search }}" class="form-control bg-light border-0 small"
+                   style="width: 15rem;" placeholder="{% tr 'Sök' %}..." aria-label="{% tr 'Sök' %}">
+            {% if search %}
+            <button type="button" class="btn bg-light border-0 ml-2" id="clear-search-btn"
+                    aria-label="{% tr 'Rensa sökning' 'Personregister' %}">
+                <i class="fas fa-times-circle fa-sm text-gray-400"></i>
+            </button>
+            {% else %}
+            <button class="btn bg-light border-0 ml-2" type="submit" aria-label="{% tr 'Sök' %}">
+                <i class="fas fa-search fa-sm text-gray-400"></i>
+            </button>
+            {% endif %}
+        </div>
+        <div class="dropdown" id="person-filter-dropdown">
+            <button class="btn btn-secondary border-0 dropdown-toggle" type="button" id="personFilterButton"
+                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fas fa-filter fa-sm mr-1"></i> {% tr "Filtrera" "Personregister" %}
+            </button>
+            <div class="dropdown-menu" aria-labelledby="personFilterButton">
+                <label class="dropdown-item person-filter-option">
+                    <input type="checkbox" name="role" value="member" class="person-filter-checkbox"
+                           {% if 'member' in active_filters.role %}checked{% endif %}>
+                    {% tr "Medlem" "Personregister" %}
+                </label>
+                <label class="dropdown-item person-filter-option">
+                    <input type="checkbox" name="role" value="trainer" class="person-filter-checkbox"
+                           {% if 'trainer' in active_filters.role %}checked{% endif %}>
+                    {% tr "Tränare" "Personregister" %}
+                </label>
+                <label class="dropdown-item person-filter-option">
+                    <input type="checkbox" name="role" value="guardian" class="person-filter-checkbox"
+                           {% if 'guardian' in active_filters.role %}checked{% endif %}>
+                    {% tr "Förälder" "Personregister" %}
+                </label>
+                <label class="dropdown-item person-filter-option">
+                    <input type="checkbox" name="role" value="other" class="person-filter-checkbox"
+                           {% if 'other' in active_filters.role %}checked{% endif %}>
+                    {% tr "Övriga" "Personregister" %}
+                </label>
+                <div class="dropdown-divider"></div>
+                <label class="dropdown-item person-filter-option">
+                    <input type="checkbox" name="payment" value="paid" class="person-filter-checkbox"
+                           {% if 'paid' in active_filters.payment %}checked{% endif %}>
+                    {% tr "Betalt" "Personregister" %}
+                </label>
+                <label class="dropdown-item person-filter-option">
+                    <input type="checkbox" name="payment" value="partly" class="person-filter-checkbox"
+                           {% if 'partly' in active_filters.payment %}checked{% endif %}>
+                    {% tr "Delvis betalt" "Personregister" %}
+                </label>
+                <label class="dropdown-item person-filter-option">
+                    <input type="checkbox" name="payment" value="unpaid" class="person-filter-checkbox"
+                           {% if 'unpaid' in active_filters.payment %}checked{% endif %}>
+                    {% tr "Ej betalt" "Personregister" %}
+                </label>
+                <div class="dropdown-divider"></div>
+                <label class="dropdown-item person-filter-option">
+                    <input type="checkbox" name="gender" value="male" class="person-filter-checkbox"
+                           {% if 'male' in active_filters.gender %}checked{% endif %}>
+                    {% tr "Man" %}
+                </label>
+                <label class="dropdown-item person-filter-option">
+                    <input type="checkbox" name="gender" value="female" class="person-filter-checkbox"
+                           {% if 'female' in active_filters.gender %}checked{% endif %}>
+                    {% tr "Kvinna" %}
+                </label>
+                <label class="dropdown-item person-filter-option">
+                    <input type="checkbox" name="gender" value="non_binary" class="person-filter-checkbox"
+                           {% if 'non_binary' in active_filters.gender %}checked{% endif %}>
+                    {% tr "Icke-binär" %}
+                </label>
+                <div class="dropdown-divider"></div>
+                <label class="dropdown-item person-filter-option">
+                    <input type="checkbox" name="age" value="under15" class="person-filter-checkbox"
+                           {% if 'under15' in active_filters.age %}checked{% endif %}>
+                    {% tr "Under 15 år" "Personregister" %}
+                </label>
+                <label class="dropdown-item person-filter-option">
+                    <input type="checkbox" name="age" value="over15" class="person-filter-checkbox"
+                           {% if 'over15' in active_filters.age %}checked{% endif %}>
+                    {% tr "15+ år" "Personregister" %}
+                </label>
+            </div>
+        </div>
+        <input type="hidden" name="sort" value="{{ sort }}">
+        <input type="hidden" name="dir" value="{{ dir }}">
+        <input type="hidden" name="per_page" value="{{ per_page }}">
+        <input type="hidden" name="filters_set" value="1">
+    </div>
+</form>
+<div class="ch-table-card">
+    <div class="ch-table-card-header">
+        {% include "shared/table_header.html" %}
+    </div>
+    {% if people %}
+    <table class="table table-bordered ch-table" width="100%" cellspacing="0">
         <thead>
             <tr>
-                <th style="width:70px">{% tr "Nr" "Personregister" %}</th>
-                <th>{% tr "Namn" %}</th>
-                <th>{% tr "Personnummer" "Personregister" %}</th>
-                <th>{% tr "E-post" "Personregister" %}</th>
-                <th>{% tr "Mobiltelefon" "Personregister" %}</th>
+                {% for col in columns %}
+                <th {% if col.width %}style="width:{{ col.width }}"{% endif %}{% if sort == col.key %} class="active-sort"{% endif %}>
+                    <a class="th-sort-link" href="{{ col.url }}">
+                        <span>{{ col.label }}</span>
+                        <i class="fas {{ col.icon }} th-sort-icon" aria-hidden="true"></i>
+                    </a>
+                </th>
+                {% endfor %}
                 <th style="width:160px"></th>
             </tr>
         </thead>
@@ -48,6 +148,14 @@
             {% endfor %}
         </tbody>
     </table>
+    {% else %}
+    <div class="ch-table-card-empty">
+        <p class="text-muted mb-0">{% tr "Inga personer matchar sökningen eller filtret." "Personregister" %}</p>
+    </div>
+    {% endif %}
+    <div class="ch-table-card-footer">
+        {% include "shared/table_footer.html" %}
+    </div>
 </div>
 {% else %}
 <p class="text-muted mb-0">{% tr "Inga personer registrerade ännu." "Personregister" %}</p>
@@ -59,6 +167,23 @@
         if (this.files.length > 0) {
             document.getElementById('import-form').submit();
         }
+    });
+
+    var clearBtn = document.getElementById('clear-search-btn');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function () {
+            document.querySelector('#person-filter-form input[name="q"]').value = '';
+            document.getElementById('person-filter-form').submit();
+        });
+    }
+
+    // Keep the filter dropdown open while toggling checkboxes and
+    // re-submit the filter form whenever a checkbox changes.
+    $('#person-filter-dropdown .dropdown-menu').on('click', function (event) {
+        event.stopPropagation();
+    });
+    $('#person-filter-dropdown input.person-filter-checkbox').on('change', function () {
+        document.getElementById('person-filter-form').submit();
     });
 </script>
 {% endblock %}
