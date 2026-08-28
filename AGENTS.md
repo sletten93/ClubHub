@@ -78,7 +78,7 @@ clubhub/
                      starts right after the BS5 print-media block), then ClubHub
                      custom styles (ch-*, table sorting/pagination). Custom rules go
                      in those later layers, never into the BS5 core. vendor/ holds
-                     only bootstrap/ and fontawesome-free/; static/js/sb-admin-2.js
+                     only bootstrap/ and fontawesome-free/; static/js/clubhub.js
                      is vanilla JS (sidebar toggle + scroll-to-top)
 ```
 

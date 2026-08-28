@@ -12059,6 +12059,16 @@ textarea.form-control-lg {
 }
 
 /*# sourceMappingURL=bootstrap.css.map */
+/* ------------------------------------------------------------------ */
+/* ClubHub global typography: Nunito as the app-wide font (loaded via  */
+/* Google Fonts in base.html / auth_base.html). The Bootstrap core     */
+/* above ships its stock system stack; these variables override it.    */
+/* ------------------------------------------------------------------ */
+:root {
+  --bs-font-sans-serif: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --bs-body-font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
 html {
   position: relative;
   min-height: 100%;

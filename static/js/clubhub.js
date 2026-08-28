@@ -1,4 +1,12 @@
+/*
+ * ClubHub theme JS: sidebar toggle, sidebar auto-collapse and
+ * scroll-to-top. Vanilla rewrite of SB Admin 2's sb-admin-2.js after
+ * the Bootstrap 5 migration (no jQuery, no Bootstrap JS dependency
+ * except the optional sidebar accordion collapse).
+ */
+
 (function () {
+
   "use strict";
 
   // Toggle the side navigation
