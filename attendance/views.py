@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -119,14 +120,15 @@ def bulk_present(request, pk):
     activity = _visible_activity(request, pk)
     _check_can_manage(request, activity)
     registered_by = services.get_person(request.user)
-    for membership in _roster(activity):
-        AttendanceRecord.objects.update_or_create(
-            activity=activity,
-            person=membership.person,
-            defaults={
-                "status": AttendanceRecord.Status.PRESENT,
-                "registered_by": registered_by,
-            },
-        )
+    with transaction.atomic():
+        for membership in _roster(activity):
+            AttendanceRecord.objects.update_or_create(
+                activity=activity,
+                person=membership.person,
+                defaults={
+                    "status": AttendanceRecord.Status.PRESENT,
+                    "registered_by": registered_by,
+                },
+            )
     messages.success(request, translate("Alla markerades som närvarande.", "Närvaro"))
     return redirect(reverse("attendance:take", kwargs={"pk": activity.pk}))

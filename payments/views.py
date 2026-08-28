@@ -1,5 +1,8 @@
+from decimal import Decimal
+
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Count, Sum, Value
+from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -23,6 +26,9 @@ class InvoiceListView(AdminRequiredMixin, ListView):
         queryset = (
             Invoice.objects.filter(club=person.club)
             .select_related("person", "season")
+            # paid_total preloads the row-level sum so the template doesn't
+            # trigger one aggregate query per invoice (Invoice.paid_amount).
+            .annotate(paid_total=Coalesce(Sum("payments__amount"), Value(Decimal("0.00"))))
             .order_by("-created_at")
         )
         status = self.request.GET.get("status")
@@ -33,15 +39,20 @@ class InvoiceListView(AdminRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         person = services.get_person(self.request.user)
-        club_invoices = Invoice.objects.filter(club=person.club)
+        status_counts = dict(
+            Invoice.objects.filter(club=person.club)
+            .values("status")
+            .annotate(n=Count("id"))
+            .values_list("status", "n")
+        )
         context["statuses"] = Invoice.Status.choices
         context["current_status"] = self.request.GET.get("status", "")
-        context["fees"] = Fee.objects.filter(club=person.club)
+        context["fees"] = Fee.objects.filter(club=person.club).select_related("season")
         context["status_tabs"] = [
             {
                 "value": status,
                 "label": label,
-                "count": club_invoices.filter(status=status).count(),
+                "count": status_counts.get(status, 0),
             }
             for status, label in Invoice.Status.choices
         ]

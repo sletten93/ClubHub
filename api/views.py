@@ -1,6 +1,8 @@
 from datetime import timedelta
 
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from rest_framework import generics
 from rest_framework.exceptions import NotFound, ValidationError
 
@@ -11,6 +13,12 @@ from scheduling.models import Activity, Season
 from .serializers import ActivitySerializer, ClubSerializer, GroupSerializer, SeasonSerializer
 
 MAX_RANGE_DAYS = 366
+
+# All endpoints are anonymous, shared, slow-moving data — safe to cache per
+# URL (incl. query string) for a minute. Errors are raised, so they are never
+# cached. Swap the default LocMem cache for Redis/Memcached when deploying
+# multi-process.
+API_CACHE_SECONDS = 60
 
 
 def _get_club(slug):
@@ -27,12 +35,14 @@ def _parse_date(value):
         return None
 
 
+@method_decorator(cache_page(API_CACHE_SECONDS), name="dispatch")
 class ClubListAPIView(generics.ListAPIView):
     queryset = Club.objects.all()
     serializer_class = ClubSerializer
     pagination_class = None
 
 
+@method_decorator(cache_page(API_CACHE_SECONDS), name="dispatch")
 class ClubSeasonsAPIView(generics.ListAPIView):
     serializer_class = SeasonSerializer
     pagination_class = None
@@ -44,6 +54,7 @@ class ClubSeasonsAPIView(generics.ListAPIView):
         )
 
 
+@method_decorator(cache_page(API_CACHE_SECONDS), name="dispatch")
 class ClubGroupsAPIView(generics.ListAPIView):
     serializer_class = GroupSerializer
     pagination_class = None
@@ -52,6 +63,7 @@ class ClubGroupsAPIView(generics.ListAPIView):
         return Group.objects.filter(club=_get_club(self.kwargs["slug"])).order_by("name")
 
 
+@method_decorator(cache_page(API_CACHE_SECONDS), name="dispatch")
 class ClubScheduleAPIView(generics.ListAPIView):
     serializer_class = ActivitySerializer
     pagination_class = None

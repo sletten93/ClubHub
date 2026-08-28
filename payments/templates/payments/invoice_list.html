@@ -72,7 +72,7 @@
                                 <td><a href="{% url 'payments:detail' invoice.pk %}" class="fw-bold">{{ invoice.person.last_name }}, {{ invoice.person.first_name }}</a></td>
                                 <td>{{ invoice.title }}</td>
                                 <td>{{ invoice.amount|floatformat:"2" }} kr</td>
-                                <td>{{ invoice.paid_amount|floatformat:"2" }} kr</td>
+                                <td>{{ invoice.paid_total|floatformat:"2" }} kr</td>
                                 <td>
                                     {% if invoice.status == "paid" %}<span class="badge bg-success">{% tr invoice.get_status_display "Fakturor" %}</span>
                                     {% elif invoice.status == "partly_paid" %}<span class="badge bg-warning text-dark">{% tr invoice.get_status_display "Fakturor" %}</span>

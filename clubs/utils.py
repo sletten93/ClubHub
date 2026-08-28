@@ -1,6 +1,10 @@
 import re
 
+from django.core.cache import cache
+
 _HEX_PATTERN = re.compile(r"^#[0-9a-fA-F]{6}$")
+
+THEME_CACHE_TIMEOUT = 60 * 60
 
 
 def _safe_hex(value, fallback):
@@ -47,3 +51,24 @@ def build_theme(club):
         "on_secondary": readable_text(secondary),
         "link": shade(primary, -0.05),
     }
+
+
+def theme_cache_key(club_id):
+    return f"ch:theme:{club_id}"
+
+
+def get_theme(club):
+    """build_theme with per-club caching; the Club post_save hook below (and
+    the delete signal) keeps it fresh. build_theme itself must stay pure."""
+    if club is None:
+        return None
+    key = theme_cache_key(club.pk)
+    theme = cache.get(key)
+    if theme is None:
+        theme = build_theme(club)
+        cache.set(key, theme, THEME_CACHE_TIMEOUT)
+    return theme
+
+
+def invalidate_theme_cache(instance, **_kwargs):
+    cache.delete(theme_cache_key(instance.pk))

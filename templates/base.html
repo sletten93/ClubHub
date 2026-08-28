@@ -10,8 +10,7 @@
     <link rel="icon" href="{{ current_club.logo.url }}">
     {% endif %}
     <link href="{% static 'vendor/fontawesome-free/css/all.min.css' %}" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
-    <link href="{% static 'css/clubhub.css' %}?v=20" rel="stylesheet">
+    <link href="{% static 'css/clubhub.css' %}" rel="stylesheet">
     {% if theme %}
     <style>
         :root { --ch-primary: {{ theme.primary }}; }
@@ -96,7 +95,7 @@
     {% endif %}
 </head>
 
-<body id="page-top">
+<body id="page-top" hx-boost="true">
 <div id="wrapper">
     <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar"
         {% if theme %}style="background-image: linear-gradient(180deg, {{ theme.secondary }} 10%, {{ theme.secondary_active }} 100%);"{% endif %}>
@@ -138,7 +137,7 @@
                 <i class="fas fa-fw fa-envelope"></i>
                 <span>{% tr "Meddelanden" "Nav" %}</span></a>
         </li>
-        {% if user.person.staff_profile.is_admin %}
+        {% if current_person and current_person.staff_profile.is_admin %}
         <li class="nav-item{% if request.resolver_match.view_name|slice:':7' == 'people:' %} active{% endif %}">
             <a class="nav-link" href="{% url 'people:register' %}">
                 <i class="fas fa-fw fa-address-book"></i>
@@ -213,7 +212,7 @@
                         </a>
                         <div class="dropdown-menu dropdown-menu-end shadow animated--grow-in"
                              aria-labelledby="userDropdown">
-                            {% if user.person.staff_profile.is_admin %}
+                            {% if current_person and current_person.staff_profile.is_admin %}
                             <a class="dropdown-item" href="{% url 'clubs:settings' %}">
                                 <i class="fas fa-cogs fa-sm fa-fw me-2 text-gray-400"></i>
                                 {% tr "Klubbinställningar" "Nav" %}
@@ -282,12 +281,16 @@
 </div>
 
 <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-<script src="{% static 'js/clubhub.js' %}?v=4"></script>
-<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.4/dist/htmx.min.js"></script>
+<script src="{% static 'js/clubhub.js' %}"></script>
+<script src="{% static 'vendor/htmx/htmx.min.js' %}"></script>
 <script>
-    document.body.addEventListener("htmx:configRequest", function (event) {
-        event.detail.headers["X-CSRFToken"] = "{{ csrf_token }}";
-    });
+    // The body element survives hx-boost swaps, so bind the CSRF hook once.
+    if (!window.chCsrfBound) {
+        window.chCsrfBound = true;
+        document.body.addEventListener("htmx:configRequest", function (event) {
+            event.detail.headers["X-CSRFToken"] = "{{ csrf_token }}";
+        });
+    }
 </script>
 {% block extra_scripts %}{% endblock %}
 </body>

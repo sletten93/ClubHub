@@ -18,12 +18,14 @@ payment registration, email notifications, public read-only schedule API, club b
 
 | Component | Version / choice |
 |---|---|
-| Python | 3.14 |
-| Django | 6.1 |
+| Python | 3.14 (3.14.7 on the dev machine — install via `winget install Python.Python.3.14`, create the venv with `py -3.14 -m venv .venv`) |
+| Django | 6.1 (latest stable) |
 | Database | SQLite (dev). Postgres intended for production |
 | REST API | Django REST Framework 3.18 |
 | Front-end | SB Admin 2 look on Bootstrap 5.3.8 (vendored dist, no jQuery) + FontAwesome 5, server-rendered Django templates |
-| Interactivity | HTMX 2 (CDN) — used by the attendance grid |
+| Interactivity | HTMX 2 (vendored in `static/vendor/htmx/`) — attendance grid + `hx-boost` page navigation |
+| Static serving | whitenoise 6 + Brotli: hashed filenames, gzip/br precompression, far-future `Cache-Control` (after `collectstatic`) |
+| Fonts | Nunito self-hosted woff2 (`static/vendor/fonts/nunito/`), `@font-face` at the top of the ClubHub custom layer in `clubhub.css` |
 | Recurrence | python-dateutil `rrule` |
 | Images | Pillow |
 
@@ -76,10 +78,13 @@ clubhub/
 └── static/          clubhub.css is a spliced file: stock Bootstrap 5.3.8 dist CSS,
                      then the SB Admin 2 component layer (sidebar/topbar/gradients,
                      starts right after the BS5 print-media block), then ClubHub
-                     custom styles (ch-*, table sorting/pagination). Custom rules go
-                     in those later layers, never into the BS5 core. vendor/ holds
-                     only bootstrap/ and fontawesome-free/; static/js/clubhub.js
-                     is vanilla JS (sidebar toggle + scroll-to-top)
+                     custom styles (ch-*, table sorting/pagination, self-hosted
+                     Nunito @font-face). Custom rules go in those later layers,
+                     never into the BS5 core. vendor/ holds bootstrap/,
+                     fontawesome-free/ (all.min.css + woff2 fonts only),
+                     htmx/ and fonts/nunito/; static/js/clubhub.js is vanilla JS
+                     (sidebar toggle, scroll-to-top, table scrollbars) written to
+                     be safe under hx-boost re-execution
 ```
 
 ## Architecture decisions (keep these)
@@ -148,8 +153,24 @@ clubhub/
     `g-0`, `data-bs-toggle/-dismiss/-target`, `bootstrap.Modal.getOrCreateInstance(el)`.
     Do not use removed BS4 classes (`mr-/ml-`, `font-weight-*`, `badge badge-success`,
     `custom-select`, `form-group`, `btn-block`, `no-gutters`, `dropdown-menu-right`,
-    `.close`, `input-group-append`). Bump the `clubhub.css?v=` cache-buster in
-    `base.html` when the CSS changes.
+    `.close`, `input-group-append`).
+11. **Static assets & caching (2026-08)**: static files go through whitenoise with a
+    manifest storage subclass (`config/storage.py`) — hashed filenames, gzip/brotli
+    precompression, `Cache-Control: immutable` after `collectstatic`. There is NO
+    manual cache-busting anymore (`?v=` query strings are gone); after changing any
+    static file just run `collectstatic` when deploying — dev/tests fall back to
+    unhashed URLs automatically because the manifest is optional there. Fonts are
+    self-hosted (no font CDN in templates). The public `api/` endpoints are
+    `cache_page(60)`-cached and the club theme dict is cached per club
+    (`clubs/utils.get_theme`, invalidated by the Club `post_save` signal).
+12. **hx-boost navigation**: `base.html` sets `hx-boost="true"`, so every link/form
+    in the app shell swaps `<body>` via XHR with pushState. Consequences: scripts
+    inside `<body>` are **re-executed on every navigation** — they must be idempotent
+    (see `static/js/clubhub.js`: replaceable window listeners, self-tearing-down
+    intervals, bind-once guards). Auth redirects (login required / logout) are
+    converted to `HX-Redirect` full-page navigations by
+    `clubs.middleware.HtmxAuthRedirectMiddleware` so the login layout never gets
+    swapped into the app shell. `auth_base.html` deliberately has no hx-boost.
 
 ## Known gotchas (learned the hard way)
 
@@ -166,6 +187,17 @@ clubhub/
   `@override_settings(DEBUG=False)` and `assertContains(..., status_code=404)`.
 - Media files are served by Django only while `DEBUG=True`. Production needs
   nginx/S3-style serving.
+- **Static files with a manifest storage**: tests never run `collectstatic`, so
+  {% static %} would raise "missing manifest entry" with the stock manifest storage.
+  `config.storage.StaticStorage` falls back to the unhashed URL whenever the manifest
+  can't answer — keep that fallback. Also: deleting a vendor file that some vendored
+  CSS still references (e.g. FontAwesome legacy webfont formats) breaks
+  `collectstatic` post-processing with a hard CommandError — trim the `@font-face`
+  src lists when pruning formats.
+- **hx-boost + scripts**: anything added to `base.html` scripts must tolerate being
+  re-run after every navigation (see decision 12). `window.location.href` downloads
+  (the person-register export button) are immune to hx-boost — keep using direct
+  navigation for file downloads, not boosted forms.
 - Attendance HTMX endpoints return 404 (not 403) for groups the caller cannot manage —
   deliberate (no existence leak).
 
@@ -187,8 +219,9 @@ clubhub/
   the old bundled Chart.js 2 was removed with the BS5 migration)
 - Personnummer encryption at rest + audit logging (GDPR)
 - Template-edit regeneration UX (currently regenerates on save)
-- Deployment hardening: Postgres, env-based settings, gunicorn/nginx, media storage,
-  API versioning/caching
+- Deployment hardening: Postgres (swap the LocMem cache default for Redis when
+  multi-process), env-based settings, gunicorn/nginx + `collectstatic` (whitenoise
+  already covers static compression/caching), media storage, API versioning
 - SMS notifications (deliberately deferred)
 - Online payments (Swish/Stripe) — decided to defer; manual registration for now
 

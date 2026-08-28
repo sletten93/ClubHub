@@ -7,10 +7,20 @@ from .models import Person
 def get_person(user):
     if not user.is_authenticated:
         return None
+    # Cached on the user instance so the several per-request callers (context
+    # processor, mixins, views) share one query; User objects never outlive
+    # the request, so this cannot go stale across requests.
+    cached = getattr(user, "_clubhub_person", None)
+    if cached is not None and cached.user_id == user.pk:
+        return cached
     try:
-        return user.person
+        # club + staff_profile are read on every rendered request (theming,
+        # sidebar admin links) — preload them alongside the person.
+        person = Person.objects.select_related("club", "staff_profile").get(user=user)
     except Person.DoesNotExist:
         return None
+    user._clubhub_person = person
+    return person
 
 
 def has_staff_profile(user):

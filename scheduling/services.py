@@ -34,25 +34,38 @@ def _occurrence_dates(template):
 
 
 def generate_occurrences(template):
-    created = []
-    for occurrence_date in _occurrence_dates(template):
-        activity, was_created = Activity.objects.get_or_create(
-            template=template,
-            date=occurrence_date,
-            defaults={
-                "club": template.club,
-                "season": template.season,
-                "group": template.group,
-                "title": template.title,
-                "activity_type": template.activity_type,
-                "start_time": template.start_time,
-                "end_time": template.end_time,
-                "location": template.location,
-            },
+    """Create every missing occurrence for a template in bulk.
+
+    Idempotent like the previous get_or_create loop: dates that already have
+    an Activity (attendance-protected or manually edited ones included) are
+    skipped untouched. The (template, date) unique constraint in
+    scheduling.models.Activity backs this up under races.
+    """
+    occurrence_dates = _occurrence_dates(template)
+    if not occurrence_dates:
+        return []
+    existing_dates = set(
+        Activity.objects.filter(template=template, date__in=occurrence_dates).values_list(
+            "date", flat=True
         )
-        if was_created:
-            created.append(activity)
-    return created
+    )
+    missing = [
+        Activity(
+            club=template.club,
+            season=template.season,
+            group=template.group,
+            template=template,
+            title=template.title,
+            activity_type=template.activity_type,
+            date=occurrence_date,
+            start_time=template.start_time,
+            end_time=template.end_time,
+            location=template.location,
+        )
+        for occurrence_date in occurrence_dates
+        if occurrence_date not in existing_dates
+    ]
+    return Activity.objects.bulk_create(missing)
 
 
 def regenerate_occurrences(template, today=None):

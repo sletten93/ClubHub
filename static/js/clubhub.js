@@ -3,11 +3,25 @@
  * scroll-to-top. Vanilla rewrite of SB Admin 2's sb-admin-2.js after
  * the Bootstrap 5 migration (no jQuery, no Bootstrap JS dependency
  * except the optional sidebar accordion collapse).
+ *
+ * hx-boost re-executes this file after every boosted navigation, so
+ * anything scoped to window/body must be idempotent:
+ * replaceWindowListener swaps handlers in place instead of stacking,
+ * the per-table interval tears itself down once its container leaves
+ * the DOM, and the htmx:afterSwap hook is bound exactly once to the
+ * (persistent) body node.
  */
 
 (function () {
 
   "use strict";
+
+  function replaceWindowListener(name, type, handler) {
+    var key = "chListener:" + name;
+    if (window[key]) window.removeEventListener(type, window[key]);
+    window.addEventListener(type, handler);
+    window[key] = handler;
+  }
 
   // Toggle the side navigation
   document.querySelectorAll("#sidebarToggle, #sidebarToggleTop").forEach(function (btn) {
@@ -27,7 +41,7 @@
 
   // Collapse sidebar accordions below 768px and auto-toggle the
   // collapsed state below 480px
-  window.addEventListener("resize", function () {
+  replaceWindowListener("sidebar", "resize", function () {
     var sidebar = document.querySelector(".sidebar");
     if (!sidebar) return;
     if (window.innerWidth < 768 && window.bootstrap) {
@@ -44,7 +58,10 @@
   // Scroll to top button appear / smooth scroll
   var scrollToTop = document.querySelector(".scroll-to-top");
   if (scrollToTop) {
-    window.addEventListener("scroll", function () {
+    replaceWindowListener("scroll", function () {
+      // This handler outlives the button it closes over after a
+      // boosted swap; only style the one still in the DOM.
+      if (!scrollToTop.isConnected) return;
       scrollToTop.style.display = window.scrollY > 100 ? "block" : "none";
     });
     scrollToTop.addEventListener("click", function (e) {
@@ -103,25 +120,45 @@
         container.scrollLeft = proxy.scrollLeft;
       }
     });
+    // Window-level re-measure hook (see scheduleUpdateAll below).
+    container.addEventListener("ch-remeasure", update);
 
     // Container size changes (window, sidebar toggle), table size changes
     // (HTMX row swaps) and late font loads all need a re-measure. The
-    // interval is a safety net for contexts that change layout without
-    // firing resize or ResizeObserver callbacks.
+    // interval doubles as the hx-boost teardown: once the container has
+    // been swapped out, stop the timer and drop every lingering reference.
+    var observer = null;
     if (window.ResizeObserver) {
-      var observer = new ResizeObserver(update);
+      observer = new ResizeObserver(update);
       observer.observe(container);
       var table = container.querySelector("table");
       if (table) observer.observe(table);
     }
-    window.addEventListener("resize", update);
-    window.addEventListener("load", update);
+    var intervalId = setInterval(function () {
+      if (!container.isConnected) {
+        clearInterval(intervalId);
+        if (observer) observer.disconnect();
+        proxy.remove();
+        return;
+      }
+      update();
+    }, 800);
     if (document.fonts && document.fonts.ready) {
       document.fonts.ready.then(update);
     }
-    setInterval(update, 800);
     update();
   }
+
+  // One window resize handler re-measures every live table scroll;
+  // replaced on each navigation so the latest DOM is what gets measured.
+  function scheduleUpdateAll() {
+    document.querySelectorAll(".ch-table-card .table-responsive").forEach(function (container) {
+      if (container.isConnected) {
+        container.dispatchEvent(new Event("ch-remeasure"));
+      }
+    });
+  }
+  replaceWindowListener("tables", "resize", scheduleUpdateAll);
 
   /*
    * Phone-width header columns are sized by their data cells only (CSS
@@ -152,8 +189,12 @@
   }
   wrapHeaderLabels();
   enhanceAllTableScrolls();
-  document.body.addEventListener("htmx:afterSwap", function () {
-    wrapHeaderLabels();
-    enhanceAllTableScrolls();
-  });
+  if (!window.chAfterSwapBound) {
+    window.chAfterSwapBound = true;
+    // body survives boosted swaps, so one binding serves every navigation.
+    document.body.addEventListener("htmx:afterSwap", function () {
+      wrapHeaderLabels();
+      enhanceAllTableScrolls();
+    });
+  }
 })();
