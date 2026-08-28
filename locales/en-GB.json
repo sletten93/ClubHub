@@ -24,7 +24,8 @@
     "Stäng": "Close",
     "Vill du avsluta din nuvarande session?": "Do you want to end your current session?",
     "Sidan hittades inte": "Page not found",
-    "Det verkar som att du hittade ett fel i matrisen...": "It looks like you found a glitch in the matrix..."
+    "Det verkar som att du hittade ett fel i matrisen...": "It looks like you found a glitch in the matrix...",
+    "Välj fil": "Choose file"
   },
   "Nav": {
     "Grupper": "Groups",
@@ -201,7 +202,11 @@
     "Menyraden i toppen.": "The top navigation bar.",
     "Visas i menyn och på startsidan. PNG, JPG eller WebP.": "Shown in the menu and on the start page. PNG, JPG or WebP.",
     "Används som diskret bakgrund bakom innehållet, med en ljus transparent överlägg för läsbarhet.": "Used as a subtle background behind the content, with a light transparent overlay for readability.",
-    "Menyn till vänster.": "The menu on the left."
+    "Menyn till vänster.": "The menu on the left.",
+    "Är du säker på att du vill ta bort bilden?": "Are you sure you want to remove the image?",
+    "Ja": "Yes",
+    "Nej": "No",
+    "Bilden kunde inte tas bort.": "The image could not be removed."
   },
   "Personregister": {
     "Personregister": "People register",
@@ -217,7 +222,6 @@
     "Filtrera": "Filter",
     "Rensa sökning": "Clear search",
     "Inga personer matchar sökningen eller filtret.": "No people match the search or filter.",
-
     "Ny person": "New person",
     "Ändra person": "Edit person",
     "Förnamn": "First name",

@@ -1,13 +1,19 @@
 {% load tr %}
 {% if widget.is_initial %}
-<div class="d-flex align-items-center gap-2 mb-2" data-current-wrapper>
-    {% if widget.file_url %}
-    <img src="{{ widget.file_url }}" alt="" class="img-thumbnail bg-white" style="max-height:96px" data-current-image>
-    {% endif %}
+<div class="d-flex align-items-center mb-2" data-current-wrapper>
+    <img src="{{ widget.file_url }}" alt="" class="img-thumbnail bg-white mr-2" style="max-height:96px" data-current-image>
     <span class="small text-muted text-break">{{ widget.display_filename }}</span>
 </div>
-<input type="checkbox" name="{{ widget.checkbox_name }}" id="{{ widget.checkbox_id }}" class="d-none"{% if widget.attrs.disabled %} disabled{% endif %}>
-<button type="button" class="btn btn-sm btn-outline-danger mb-2" data-clear-button="{{ widget.checkbox_id }}" data-label-remove="{% tr 'Ta bort' %}" data-label-undo="{% tr 'Avbryt' %}">{% tr 'Ta bort' %}</button>
+{% else %}
+<img data-current-image class="img-thumbnail bg-white d-none mb-2" style="max-height:96px" alt="">
 {% endif %}
-<img data-new-preview class="img-thumbnail bg-white d-none mb-2" style="max-height:96px" alt="">
-<input type="{{ widget.type }}" name="{{ widget.name }}" data-preview-input{% include "django/forms/widgets/attrs.html" %}>
+<div class="ch-file-row">
+    {% if widget.is_initial %}
+    <button type="button" class="btn btn-sm btn-outline-danger mr-2" data-remove-image="{{ widget.name }}">{% tr 'Ta bort' %}</button>
+    {% endif %}
+    <span class="ch-file">
+        <input type="{{ widget.type }}" name="{{ widget.name }}" data-preview-input{% include "django/forms/widgets/attrs.html" %}>
+        <span class="ch-file-button">{% tr 'Välj fil' %}</span>
+    </span>
+    <span class="small text-muted ml-2" data-file-name></span>
+</div>

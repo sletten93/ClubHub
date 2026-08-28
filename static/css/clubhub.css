@@ -11536,3 +11536,162 @@ body.sidebar-toggled footer.sticky-footer {
   box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
   outline: 0;
 }
+
+/* Chip-style checkbox groups (CheckboxSelectMultiple via the overridden
+   checkbox_option.html): the native checkbox is hidden and selection is
+   shown as a rounded border around the option text — no background fill. */
+.ch-chip {
+  display: inline-block;
+  margin: 0.3rem 0.5rem 0.3rem 0;
+  cursor: pointer;
+}
+
+.ch-chip input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.ch-chip span {
+  display: inline-block;
+  padding: 0.2rem 0.85rem;
+  font-size: 0.9375rem;
+  color: #6e707e;
+  background-color: #fff;
+  border: 1px solid #d1d3e2;
+  border-radius: 1rem;
+  transition: border-color 0.15s ease-in-out, color 0.15s ease-in-out,
+    box-shadow 0.15s ease-in-out;
+}
+
+.ch-chip:hover span {
+  border-color: #aab0c0;
+  color: #4e5158;
+}
+
+.ch-chip input:checked + span {
+  border-color: var(--ch-primary, #4e73df);
+  color: var(--ch-primary, #4e73df);
+  font-weight: 600;
+}
+
+.ch-chip input:focus-visible + span {
+  box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+}
+
+/* Floating label variant with the label ABOVE the control — for controls too
+   small to carry a border label (color pickers etc.). Use with .ch-float. */
+.ch-float.ch-float-top > .ch-float-label {
+  position: static;
+  display: block;
+  padding: 0;
+  background: none;
+  margin-bottom: 0.25rem;
+}
+
+/* Bordered box with the caption sitting on its border. Reusable on any div:
+   <div class="ch-box" data-label="Rubrik"> ... </div>
+   Set --ch-box-bg when the box sits on a non-white background. */
+.ch-box {
+  position: relative;
+  margin-top: 0.55rem;
+  border: 1px solid #d1d3e2;
+  border-radius: 0.35rem;
+  background-color: var(--ch-box-bg, #fff);
+}
+
+.ch-box::before {
+  content: attr(data-label);
+  position: absolute;
+  top: -0.7em;
+  left: 0.75rem;
+  padding: 0 0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.15;
+  color: #858796;
+  background-color: var(--ch-box-bg, #fff);
+}
+
+/* File pickers, global: discreet 14px text on a transparent background,
+   forced to the same 31px height as .btn-sm. The white box is the native
+   upload button (clubhub reboot sets -webkit-appearance: button on it), so
+   the pseudo-element itself must be reset to become transparent. */
+input[type="file"] {
+  height: 31px;
+  box-sizing: border-box;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #6e707e;
+  background-color: transparent;
+  border: 0;
+}
+
+input[type="file"]::-webkit-file-upload-button,
+input[type="file"]::file-selector-button {
+  height: 31px;
+  margin: 0 0.5rem 0 0;
+  padding: 0;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  background-color: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+/* Keeps the choose/remove button and the file input on one line */
+.ch-file-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Localized file picker: the native input is stretched invisibly over the
+   styled button, so clicks and keyboard access keep working while the label
+   comes from the i18n system instead of the browser ("Choose File"). */
+.ch-file {
+  position: relative;
+  display: inline-block;
+}
+
+.ch-file input[type="file"] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.ch-file-button {
+  display: inline-block;
+  height: 31px;
+  padding: 0 0.75rem;
+  font-size: 14px;
+  line-height: 29px;
+  color: #6e707e;
+  background-color: transparent;
+  border: 1px solid #d1d3e2;
+  border-radius: 0.2rem;
+  user-select: none;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.ch-file:hover .ch-file-button {
+  color: #4e5158;
+  background-color: #f8f9fc;
+  border-color: #aab0c0;
+}
+
+.ch-file input[type="file"]:focus-visible + .ch-file-button {
+  outline: 0;
+  border-color: var(--ch-primary, #bac8f3);
+  box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+}

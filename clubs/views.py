@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -77,3 +78,20 @@ class ClubSettingsView(AdminRequiredMixin, UpdateView):
             translate("Inställningarna har sparats.", "Klubbinställningar"),
         )
         return response
+
+
+@login_required
+def remove_club_image(request):
+    person = services.get_person(request.user)
+    if person is None or not services.is_admin(request.user):
+        return JsonResponse({"error": "forbidden"}, status=403)
+    field = request.POST.get("field")
+    if field not in ("logo", "background_image"):
+        return JsonResponse({"error": "unknown field"}, status=400)
+    club = person.club
+    image = getattr(club, field)
+    if image:
+        image.delete(save=False)
+        setattr(club, field, "")
+        club.save()
+    return JsonResponse({"ok": True})

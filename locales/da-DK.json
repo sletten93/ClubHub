@@ -24,7 +24,8 @@
     "Stäng": "Luk",
     "Vill du avsluta din nuvarande session?": "Vil du afslutte din nuværende session?",
     "Sidan hittades inte": "Side ikke fundet",
-    "Det verkar som att du hittade ett fel i matrisen...": "Det ser ud til, at du fandt en fejl i matricen..."
+    "Det verkar som att du hittade ett fel i matrisen...": "Det ser ud til, at du fandt en fejl i matricen...",
+    "Välj fil": "Vælg fil"
   },
   "Nav": {
     "Grupper": "Grupper",
@@ -201,7 +202,11 @@
     "Menyraden i toppen.": "Menulinjen i toppen.",
     "Visas i menyn och på startsidan. PNG, JPG eller WebP.": "Vises i menuen og på forsiden. PNG, JPG eller WebP.",
     "Används som diskret bakgrund bakom innehållet, med en ljus transparent överlägg för läsbarhet.": "Bruges som diskret baggrund bag indholdet, med et lyst transparent overlag for læsbarhed.",
-    "Menyn till vänster.": "Menuen til venstre."
+    "Menyn till vänster.": "Menuen til venstre.",
+    "Är du säker på att du vill ta bort bilden?": "Er du sikker på, at du vil fjerne billedet?",
+    "Ja": "Ja",
+    "Nej": "Nej",
+    "Bilden kunde inte tas bort.": "Billedet kunne ikke fjernes."
   },
   "Personregister": {
     "Personregister": "Personregister",
@@ -217,7 +222,6 @@
     "Filtrera": "Filtrer",
     "Rensa sökning": "Ryd søgning",
     "Inga personer matchar sökningen eller filtret.": "Ingen personer matcher søgningen eller filteret.",
-
     "Ny person": "Ny person",
     "Ändra person": "Rediger person",
     "Förnamn": "Fornavn",

@@ -9,7 +9,7 @@ whose label sits on the input's top border (see .ch-float in clubhub.css).
     {{ field }}
   {% else %}
     <div{% with classes=field.css_classes %}{% if classes %} class="{{ classes }} form-group"{% else %} class="form-group"{% endif %}{% endwith %}>
-      {% if field.field.widget.input_type == 'checkbox' %}
+      {% if field.field.widget.input_type == 'checkbox' and not field.field.widget.allow_multiple_selected %}
         <div class="form-check">
           {{ field }}
           <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>

@@ -24,7 +24,8 @@
     "Stäng": "Sulje",
     "Vill du avsluta din nuvarande session?": "Haluatko lopettaa nykyisen istunnon?",
     "Sidan hittades inte": "Sivua ei löytynyt",
-    "Det verkar som att du hittade ett fel i matrisen...": "Vaikuttaa siltä, että löysit glitchin matriisista..."
+    "Det verkar som att du hittade ett fel i matrisen...": "Vaikuttaa siltä, että löysit glitchin matriisista...",
+    "Välj fil": "Valitse tiedosto"
   },
   "Nav": {
     "Grupper": "Ryhmät",
@@ -201,7 +202,11 @@
     "Menyraden i toppen.": "Yläreunan valikkopalkki.",
     "Visas i menyn och på startsidan. PNG, JPG eller WebP.": "Näkyy valikossa ja etusivulla. PNG, JPG tai WebP.",
     "Används som diskret bakgrund bakom innehållet, med en ljus transparent överlägg för läsbarhet.": "Käytetään hillitynä taustana sisällön alla, vaalealla läpinäkyvällä päällysteellä luettavuuden vuoksi.",
-    "Menyn till vänster.": "Vasen valikko."
+    "Menyn till vänster.": "Vasen valikko.",
+    "Är du säker på att du vill ta bort bilden?": "Haluatko varmasti poistaa kuvan?",
+    "Ja": "Kyllä",
+    "Nej": "Ei",
+    "Bilden kunde inte tas bort.": "Kuvan poistaminen epäonnistui."
   },
   "Personregister": {
     "Personregister": "Henkilörekisteri",
@@ -217,7 +222,6 @@
     "Filtrera": "Suodata",
     "Rensa sökning": "Tyhjennä haku",
     "Inga personer matchar sökningen eller filtret.": "Ei henkilöitä, jotka vastaavat hakua tai suodatinta.",
-
     "Ny person": "Uusi henkilö",
     "Ändra person": "Muokkaa henkilöä",
     "Förnamn": "Etunimi",

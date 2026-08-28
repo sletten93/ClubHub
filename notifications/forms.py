@@ -16,7 +16,7 @@ class NotificationForm(forms.Form):
     groups = forms.ModelMultipleChoiceField(
         queryset=Group.objects.none(),
         required=False,
-        widget=forms.SelectMultiple(attrs={"size": 6}),
+        widget=forms.CheckboxSelectMultiple,
     )
 
     def __init__(self, *args, club=None, **kwargs):

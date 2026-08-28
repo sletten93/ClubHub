@@ -1,0 +1,10 @@
+{% comment %}
+Overrides django/forms/widgets/checkbox_option.html: renders each choice of a
+CheckboxSelectMultiple as a chip (see .ch-chip in clubhub.css) — the native
+checkbox is hidden and a rounded border around the option text marks the
+selected state instead of a background color.
+{% endcomment %}
+<label class="ch-chip"{% if widget.attrs.id %} for="{{ widget.attrs.id }}"{% endif %}>
+    <input type="{{ widget.type }}" name="{{ widget.name }}"{% if widget.value != None %} value="{{ widget.value|stringformat:'s' }}"{% endif %}{% include "django/forms/widgets/attrs.html" %}>
+    <span>{{ widget.label }}</span>
+</label>

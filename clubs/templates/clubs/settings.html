@@ -33,7 +33,7 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-4">
-                    <div class="form-group ch-float">
+                    <div class="form-group ch-float ch-float-top">
                         <label class="ch-float-label" for="{{ form.primary_color.id_for_label }}">{{ form.primary_color.label }}</label>
                         {{ form.primary_color }}
                         <small class="form-text text-muted">{% tr "Knappar, länkar, badges och fokusmarkering." "Klubbinställningar" %}</small>
@@ -41,7 +41,7 @@
                     {% if form.primary_color.errors %}<div class="text-danger small">{{ form.primary_color.errors.0 }}</div>{% endif %}
                 </div>
                 <div class="col-md-4">
-                    <div class="form-group ch-float">
+                    <div class="form-group ch-float ch-float-top">
                         <label class="ch-float-label" for="{{ form.secondary_color.id_for_label }}">{{ form.secondary_color.label }}</label>
                         {{ form.secondary_color }}
                         <small class="form-text text-muted">{% tr "Menyn till vänster." "Klubbinställningar" %}</small>
@@ -49,8 +49,7 @@
                     {% if form.secondary_color.errors %}<div class="text-danger small">{{ form.secondary_color.errors.0 }}</div>{% endif %}
                 </div>
                 <div class="col-md-4">
-                    <span class="d-block text-muted mb-1">{% tr "Förhandsvisning" "Klubbinställningar" %}</span>
-                    <div class="border rounded p-3 bg-white">
+                    <div class="ch-box p-3" data-label="{% tr "Förhandsvisning" "Klubbinställningar" %}">
                         <button id="pv-solid" type="button" class="btn btn-primary btn-sm mr-2 mb-2">{% tr "Spara" %}</button>
                         <button id="pv-outline" type="button" class="btn btn-outline-primary btn-sm mr-2 mb-2">{% tr "Avbryt" %}</button>
                         <span id="pv-badge" class="badge badge-primary align-middle"
@@ -88,6 +87,21 @@
         <span class="text">{% tr "Spara inställningar" "Klubbinställningar" %}</span>
     </button>
 </form>
+
+<div class="modal fade" id="removeImageModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-body">
+                {% tr "Är du säker på att du vill ta bort bilden?" "Klubbinställningar" %}
+                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">{% tr "Nej" "Klubbinställningar" %}</button>
+                <button type="button" class="btn btn-danger" id="remove-image-confirm">{% tr "Ja" "Klubbinställningar" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
     (function () {
@@ -147,44 +161,53 @@
         });
         updateColors();
 
-        document.querySelectorAll("[data-clear-button]").forEach(function (button) {
-            button.addEventListener("click", function () {
-                const checkbox = document.getElementById(button.dataset.clearButton);
-                checkbox.checked = !checkbox.checked;
-                button.textContent = checkbox.checked ? button.dataset.labelUndo : button.dataset.labelRemove;
-                button.classList.toggle("btn-danger", checkbox.checked);
-                button.classList.toggle("btn-outline-danger", !checkbox.checked);
+        document.querySelectorAll("input[type=file][data-preview-input]").forEach(function (input) {
+            input.addEventListener("change", function () {
+                var cardBody = input.closest(".card-body");
+                var thumbnail = cardBody ? cardBody.querySelector("[data-current-image]") : null;
+                var nameSpan = input.closest(".ch-file-row").querySelector("[data-file-name]");
+                var file = input.files && input.files[0];
+                if (nameSpan) nameSpan.textContent = file ? file.name : "";
+                if (!thumbnail) return;
+                if (!file) {
+                    thumbnail.src = "";
+                    if (!thumbnail.closest("[data-current-wrapper]")) thumbnail.classList.add("d-none");
+                    return;
+                }
+                var reader = new FileReader();
+                reader.onload = function (event) {
+                    thumbnail.src = event.target.result;
+                    thumbnail.classList.remove("d-none");
+                };
+                reader.readAsDataURL(file);
             });
         });
 
-        document.querySelectorAll("input[type=file][data-preview-input]").forEach(function (input) {
-            input.addEventListener("change", function () {
-                let target = null;
-                let group = input.parentElement;
-                while (group && group !== document.body) {
-                    target = group.querySelector("[data-new-preview]");
-                    if (target) break;
-                    group = group.parentElement;
-                }
-                if (!target) return;
-                const file = input.files && input.files[0];
-                if (!file) {
-                    target.classList.add("d-none");
-                    target.src = "";
-                    return;
-                }
-                const reader = new FileReader();
-                reader.onload = function (event) {
-                    target.src = event.target.result;
-                    target.classList.remove("d-none");
-                };
-                reader.readAsDataURL(file);
-                const cardBody = input.closest(".card-body");
-                if (cardBody) {
-                    const current = cardBody.querySelector("[data-current-wrapper]");
-                    if (current) current.classList.add("d-none");
-                }
+        var removeImageField = null;
+        document.querySelectorAll("[data-remove-image]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                removeImageField = button.dataset.removeImage;
+                $("#removeImageModal").modal("show");
             });
+        });
+
+        document.getElementById("remove-image-confirm").addEventListener("click", function () {
+            if (!removeImageField) return;
+            var data = new FormData();
+            data.append("field", removeImageField);
+            data.append(
+                "csrfmiddlewaretoken",
+                document.querySelector("#removeImageModal input[name=csrfmiddlewaretoken]").value
+            );
+            fetch("{% url 'clubs:remove_image' %}", { method: "POST", body: data })
+                .then(function (response) {
+                    if (!response.ok) throw new Error("remove failed");
+                    window.location.reload();
+                })
+                .catch(function () {
+                    $("#removeImageModal").modal("hide");
+                    window.alert("{% tr 'Bilden kunde inte tas bort.' 'Klubbinställningar' %}");
+                });
         });
     })();
 </script>

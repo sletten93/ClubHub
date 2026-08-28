@@ -169,6 +169,58 @@ class ClubSettingsTests(TestCase):
         response = self.client.get(reverse("clubs:home"))
         self.assertContains(response, self.club.logo.url)
 
+    def _upload_logo(self):
+        upload = SimpleUploadedFile("logo.png", PNG_1PX, content_type="image/png")
+        self.client.force_login(self.admin_user)
+        self.client.post(
+            reverse("clubs:settings"),
+            {
+                "name": "Style BK",
+                "organisation_number": "",
+                "email": "",
+                "phone": "",
+                "street_address": "",
+                "postal_code": "",
+                "city": "",
+                "primary_color": "#0d6efd",
+                "secondary_color": "#212529",
+                "logo": upload,
+            },
+        )
+        self.club.refresh_from_db()
+
+    def test_remove_image_clears_logo_for_admin(self):
+        self._upload_logo()
+        self.assertTrue(self.club.logo)
+        response = self.client.post(
+            reverse("clubs:remove_image"), {"field": "logo"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.club.refresh_from_db()
+        self.assertFalse(self.club.logo)
+
+    def test_remove_image_rejects_trainer_and_unknown_field(self):
+        self._upload_logo()
+        self.client.force_login(self.trainer_user)
+        response = self.client.post(
+            reverse("clubs:remove_image"), {"field": "logo"}
+        )
+        self.assertEqual(response.status_code, 403)
+
+        self.client.force_login(self.admin_user)
+        response = self.client.post(
+            reverse("clubs:remove_image"), {"field": "name"}
+        )
+        self.assertEqual(response.status_code, 400)
+        self.club.refresh_from_db()
+        self.assertTrue(self.club.logo)
+
+    def test_remove_image_requires_login(self):
+        response = self.client.post(
+            reverse("clubs:remove_image"), {"field": "logo"}
+        )
+        self.assertEqual(response.status_code, 302)
+
     def test_theme_css_applied_on_home(self):
         self.client.force_login(self.admin_user)
         response = self.client.get(reverse("clubs:home"))

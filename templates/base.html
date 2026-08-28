@@ -8,7 +8,7 @@
     <title>{% block title %}ClubHub{% endblock %}</title>
     <link href="{% static 'vendor/fontawesome-free/css/all.min.css' %}" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
-    <link href="{% static 'css/clubhub.css' %}?v=4" rel="stylesheet">
+    <link href="{% static 'css/clubhub.css' %}?v=6" rel="stylesheet">
     {% if theme %}
     <style>
         :root { --ch-primary: {{ theme.primary }}; }
@@ -80,7 +80,7 @@
             background: url('{{ current_club.background_image.url }}') no-repeat center center fixed;
             background-size: cover;
         }
-        #content-wrapper { background-color: rgba(248, 249, 252, .93); }
+        #wrapper #content-wrapper { background-color: rgba(248, 249, 252, .88); }
         {% endif %}
     </style>
     {% endif %}
