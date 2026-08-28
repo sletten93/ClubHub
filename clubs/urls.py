@@ -6,6 +6,6 @@ app_name = "clubs"
 
 urlpatterns = [
     path('', views.home, name='home'),
-    path('settings/', views.ClubSettingsView.as_view(), name='settings'),
-    path('settings/remove-image/', views.remove_club_image, name='remove_image'),
+    path('clubsettings/', views.ClubSettingsView.as_view(), name='settings'),
+    path('clubsettings/remove-image/', views.remove_club_image, name='remove_image'),
 ]
