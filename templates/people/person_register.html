@@ -5,7 +5,7 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">{% tr "Personregister" "Nav" %}</h1>
     <div class="d-flex">
-        <form method="post" action="{% url 'people:import_preview' %}" enctype="multipart/form-data" class="mr-2 mb-0" id="import-form">
+        <form method="post" action="{% url 'people:import_preview' %}" enctype="multipart/form-data" class="me-2 mb-0" id="import-form">
             {% csrf_token %}
             <input type="file" name="file" id="import-file-input" accept=".xlsx"
                    style="display:none;" />
@@ -22,24 +22,24 @@
 {% if people or is_filtered %}
 <form method="get" action="{% url 'people:register' %}" id="person-filter-form" class="mb-3">
     <div class="d-flex align-items-center flex-wrap">
-        <div class="d-flex align-items-center mr-2">
+        <div class="d-flex align-items-center me-2">
             <input type="text" name="q" value="{{ search }}" class="form-control bg-light border-0 small"
                    style="width: 15rem;" placeholder="{% tr 'Sök' %}..." aria-label="{% tr 'Sök' %}">
             {% if search %}
-            <button type="button" class="btn bg-light border-0 ml-2" id="clear-search-btn"
+            <button type="button" class="btn bg-light border-0 ms-2" id="clear-search-btn"
                     aria-label="{% tr 'Rensa sökning' 'Personregister' %}">
                 <i class="fas fa-times-circle fa-sm text-gray-400"></i>
             </button>
             {% else %}
-            <button class="btn bg-light border-0 ml-2" type="submit" aria-label="{% tr 'Sök' %}">
+            <button class="btn bg-light border-0 ms-2" type="submit" aria-label="{% tr 'Sök' %}">
                 <i class="fas fa-search fa-sm text-gray-400"></i>
             </button>
             {% endif %}
         </div>
         <div class="dropdown" id="person-filter-dropdown">
             <button class="btn btn-secondary border-0 dropdown-toggle" type="button" id="personFilterButton"
-                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <i class="fas fa-filter fa-sm mr-1"></i> {% tr "Filtrera" "Personregister" %}
+                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fas fa-filter fa-sm me-1"></i> {% tr "Filtrera" "Personregister" %}
             </button>
             <div class="dropdown-menu" aria-labelledby="personFilterButton">
                 <label class="dropdown-item person-filter-option">
@@ -136,7 +136,7 @@
             {% for person in people %}
             <tr>
                 <td>{{ person.member_number }}</td>
-                <td class="font-weight-bold">{{ person.full_name }}</td>
+                <td class="fw-bold">{{ person.full_name }}</td>
                 <td>{% if person.personnummer %}{{ person.personnummer }}{% else %}<span class="text-muted">&mdash;</span>{% endif %}</td>
                 <td>{{ person.email }}</td>
                 <td>{{ person.phone_mobile }}</td>
@@ -179,11 +179,16 @@
 
     // Keep the filter dropdown open while toggling checkboxes and
     // re-submit the filter form whenever a checkbox changes.
-    $('#person-filter-dropdown .dropdown-menu').on('click', function (event) {
-        event.stopPropagation();
-    });
-    $('#person-filter-dropdown input.person-filter-checkbox').on('change', function () {
-        document.getElementById('person-filter-form').submit();
+    var filterMenu = document.querySelector('#person-filter-dropdown .dropdown-menu');
+    if (filterMenu) {
+        filterMenu.addEventListener('click', function (event) {
+            event.stopPropagation();
+        });
+    }
+    document.querySelectorAll('#person-filter-dropdown input.person-filter-checkbox').forEach(function (box) {
+        box.addEventListener('change', function () {
+            document.getElementById('person-filter-form').submit();
+        });
     });
 </script>
 {% endblock %}

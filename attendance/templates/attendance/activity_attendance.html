@@ -22,7 +22,7 @@
 
 <div class="card shadow mb-4">
     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-        <h6 class="m-0 font-weight-bold text-primary">
+        <h6 class="m-0 fw-bold text-primary">
             {{ present_count }} / {{ roster_count }} {% tr "på plats" "Närvaro" %}
         </h6>
         <form method="post" action="{% url 'attendance:bulk_present' activity.pk %}" class="mb-0">

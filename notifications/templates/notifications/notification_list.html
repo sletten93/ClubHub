@@ -10,7 +10,7 @@
 </div>
 <div class="card shadow mb-4">
     <div class="card-header py-3">
-        <h6 class="m-0 font-weight-bold text-primary">{% tr "Meddelanden" "Nav" %}</h6>
+        <h6 class="m-0 fw-bold text-primary">{% tr "Meddelanden" "Nav" %}</h6>
     </div>
     <div class="card-body">
         {% if notifications %}
@@ -20,7 +20,7 @@
                 <tbody>
                     {% for notification in notifications %}
                     <tr>
-                        <td><a href="{% url 'notifications:detail' notification.pk %}" class="font-weight-bold">{{ notification.subject }}</a></td>
+                        <td><a href="{% url 'notifications:detail' notification.pk %}" class="fw-bold">{{ notification.subject }}</a></td>
                         <td>
                             {% if notification.all_members %}{% tr "Alla aktiva medlemmar" "Meddelanden" %}{% else %}{% for group in notification.groups.all %}{{ group.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
                         </td>

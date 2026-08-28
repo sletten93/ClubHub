@@ -8,7 +8,7 @@
     <title>{% block title %}ClubHub{% endblock %}</title>
     <link href="{% static 'vendor/fontawesome-free/css/all.min.css' %}" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
-    <link href="{% static 'css/clubhub.css' %}?v=6" rel="stylesheet">
+    <link href="{% static 'css/clubhub.css' %}?v=7" rel="stylesheet">
     {% if theme %}
     <style>
         :root { --ch-primary: {{ theme.primary }}; }
@@ -43,9 +43,8 @@
             border-color: {{ theme.primary }};
             color: {{ theme.on_primary }};
         }
-        .badge-primary { background-color: {{ theme.primary }}; }
         table thead th {
-            background-color: {{ theme.primary }};
+            background-color: {{ theme.primary }} !important;
             border-color: {{ theme.primary_hover }} !important;
             color: #f8f9fa;
         }
@@ -58,7 +57,7 @@
             background-size: cover;
         }
         .form-control:focus,
-        .custom-select:focus {
+        .form-select:focus {
             border-color: {{ theme.primary_hover }};
             box-shadow: 0 0 0 .2rem rgba({{ theme.primary_rgb }}, .25);
         }
@@ -162,28 +161,26 @@
     <div id="content-wrapper" class="d-flex flex-column">
         <div id="content">
             <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
-                <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+                <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle me-3">
                     <i class="fa fa-bars"></i>
                 </button>
-                <form class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search"
+                <form class="d-none d-sm-flex me-auto ms-md-3 my-2 my-md-0 mw-100 navbar-search"
                       action="#" method="get">
                     <div class="input-group">
                         <input type="text" class="form-control bg-light border-0 small" placeholder="{% tr 'Sök' %}..."
                                aria-label="Sök">
-                        <div class="input-group-append">
-                            <button class="btn btn-primary" type="submit">
-                                <i class="fas fa-search fa-sm"></i>
-                            </button>
-                        </div>
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-search fa-sm"></i>
+                        </button>
                     </div>
                 </form>
-                <ul class="navbar-nav ml-auto">
+                <ul class="navbar-nav ms-auto">
                     <li class="nav-item dropdown no-arrow mx-1">
                         <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
-                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                           data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <i class="fas fa-bell fa-fw"></i>
                         </a>
-                        <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                        <div class="dropdown-list dropdown-menu dropdown-menu-end shadow animated--grow-in"
                              aria-labelledby="alertsDropdown">
                             <h6 class="dropdown-header">{% tr "Notiscenter" %}</h6>
                             <span class="dropdown-item text-center small text-gray-500">{% tr "Inga nya notiser." %}</span>
@@ -191,10 +188,10 @@
                     </li>
                     <li class="nav-item dropdown no-arrow mx-1">
                         <a class="nav-link dropdown-toggle" href="#" id="messagesDropdown" role="button"
-                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                           data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <i class="fas fa-envelope fa-fw"></i>
                         </a>
-                        <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                        <div class="dropdown-list dropdown-menu dropdown-menu-end shadow animated--grow-in"
                              aria-labelledby="messagesDropdown">
                             <h6 class="dropdown-header">{% tr "Meddelandecentral" %}</h6>
                             <a class="dropdown-item text-center small text-gray-500"
@@ -204,25 +201,25 @@
                     <div class="topbar-divider d-none d-sm-block"></div>
                     <li class="nav-item dropdown no-arrow">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
-                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{ user.username }}</span>
+                           data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <span class="me-2 d-none d-lg-inline text-gray-600 small">{{ user.username }}</span>
                             <img class="img-profile rounded-circle" src="{% static 'img/undraw_profile.svg' %}">
                         </a>
-                        <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                        <div class="dropdown-menu dropdown-menu-end shadow animated--grow-in"
                              aria-labelledby="userDropdown">
                             {% if user.person.staff_profile.is_admin %}
                             <a class="dropdown-item" href="{% url 'clubs:settings' %}">
-                                <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
+                                <i class="fas fa-cogs fa-sm fa-fw me-2 text-gray-400"></i>
                                 {% tr "Klubbinställningar" "Nav" %}
                             </a>
                             {% endif %}
                             <a class="dropdown-item" href="{% url 'password_change' %}">
-                                <i class="fas fa-key fa-sm fa-fw mr-2 text-gray-400"></i>
+                                <i class="fas fa-key fa-sm fa-fw me-2 text-gray-400"></i>
                                 {% tr "Byt lösenord" "Konton" %}
                             </a>
                             <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
-                                <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+                            <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal">
+                                <i class="fas fa-sign-out-alt fa-sm fa-fw me-2 text-gray-400"></i>
                                 {% tr "Logga ut" "Nav" %}
                             </a>
                         </div>
@@ -235,8 +232,7 @@
                     {% for message in messages %}
                     <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show">
                         {{ message }}
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Stäng">
-                            <span aria-hidden="true">&times;</span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Stäng">
                         </button>
                     </div>
                     {% endfor %}
@@ -264,13 +260,12 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">{% tr "Logga ut" "Nav" %}</h5>
-                <button class="close" type="button" data-dismiss="modal" aria-label="Stäng">
-                    <span aria-hidden="true">&times;</span>
+                <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Stäng">
                 </button>
             </div>
             <div class="modal-body">{% tr "Vill du avsluta din nuvarande session?" %}</div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" type="button" data-dismiss="modal">{% tr "Avbryt" %}</button>
+                <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">{% tr "Avbryt" %}</button>
                 <form method="post" action="{% url 'logout' %}" class="mb-0">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-primary">{% tr "Logga ut" "Nav" %}</button>
@@ -280,10 +275,8 @@
     </div>
 </div>
 
-<script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
 <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-<script src="{% static 'vendor/jquery-easing/jquery.easing.min.js' %}"></script>
-<script src="{% static 'js/sb-admin-2.min.js' %}"></script>
+<script src="{% static 'js/sb-admin-2.js' %}"></script>
 <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.4/dist/htmx.min.js"></script>
 <script>
     document.body.addEventListener("htmx:configRequest", function (event) {

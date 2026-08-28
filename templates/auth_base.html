@@ -37,8 +37,7 @@
         {% for message in messages %}
         <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show mt-3">
             {{ message }}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Stäng">
-                <span aria-hidden="true">&times;</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Stäng">
             </button>
         </div>
         {% endfor %}
@@ -46,10 +45,8 @@
     {% block auth_content %}{% endblock %}
 </div>
 
-<script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
 <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-<script src="{% static 'vendor/jquery-easing/jquery.easing.min.js' %}"></script>
-<script src="{% static 'js/sb-admin-2.min.js' %}"></script>
+<script src="{% static 'js/sb-admin-2.js' %}"></script>
 </body>
 
 </html>

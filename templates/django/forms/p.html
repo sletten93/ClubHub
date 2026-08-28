@@ -1,5 +1,5 @@
 {% comment %}
-Overrides django/forms/p.html: as_p() renders each field in a .form-group
+Overrides django/forms/p.html: as_p() renders each field in a .mb-3
 whose label sits on the input's top border (see .ch-float in clubhub.css).
 {% endcomment %}
 {{ errors }}
@@ -8,7 +8,7 @@ whose label sits on the input's top border (see .ch-float in clubhub.css).
   {% if field.is_hidden %}
     {{ field }}
   {% else %}
-    <div{% with classes=field.css_classes %}{% if classes %} class="{{ classes }} form-group"{% else %} class="form-group"{% endif %}{% endwith %}>
+    <div{% with classes=field.css_classes %}{% if classes %} class="{{ classes }} mb-3"{% else %} class="mb-3"{% endif %}{% endwith %}>
       {% if field.field.widget.input_type == 'checkbox' and not field.field.widget.allow_multiple_selected %}
         <div class="form-check">
           {{ field }}

@@ -11,12 +11,12 @@
 
     <div class="card shadow mb-4">
         <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">{% tr "Allmänt" "Klubbinställningar" %}</h6>
+            <h6 class="m-0 fw-bold text-primary">{% tr "Allmänt" "Klubbinställningar" %}</h6>
         </div>
         <div class="card-body">
             {% for field in form %}
             {% if field.name != "primary_color" and field.name != "secondary_color" and field.name != "logo" and field.name != "background_image" %}
-            <div class="form-group ch-float">
+            <div class="mb-3 ch-float">
                 <label class="ch-float-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                 {{ field }}
                 {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
@@ -28,12 +28,12 @@
 
     <div class="card shadow mb-4">
         <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">{% tr "UI – färger" "Klubbinställningar" %}</h6>
+            <h6 class="m-0 fw-bold text-primary">{% tr "UI – färger" "Klubbinställningar" %}</h6>
         </div>
         <div class="card-body">
             <div class="row">
                 <div class="col-md-4">
-                    <div class="form-group ch-float ch-float-top">
+                    <div class="mb-3 ch-float ch-float-top">
                         <label class="ch-float-label" for="{{ form.primary_color.id_for_label }}">{{ form.primary_color.label }}</label>
                         {{ form.primary_color }}
                         <small class="form-text text-muted">{% tr "Knappar, länkar, badges och fokusmarkering." "Klubbinställningar" %}</small>
@@ -41,7 +41,7 @@
                     {% if form.primary_color.errors %}<div class="text-danger small">{{ form.primary_color.errors.0 }}</div>{% endif %}
                 </div>
                 <div class="col-md-4">
-                    <div class="form-group ch-float ch-float-top">
+                    <div class="mb-3 ch-float ch-float-top">
                         <label class="ch-float-label" for="{{ form.secondary_color.id_for_label }}">{{ form.secondary_color.label }}</label>
                         {{ form.secondary_color }}
                         <small class="form-text text-muted">{% tr "Menyn till vänster." "Klubbinställningar" %}</small>
@@ -50,9 +50,9 @@
                 </div>
                 <div class="col-md-4">
                     <div class="ch-box p-3" data-label="{% tr "Förhandsvisning" "Klubbinställningar" %}">
-                        <button id="pv-solid" type="button" class="btn btn-primary btn-sm mr-2 mb-2">{% tr "Spara" %}</button>
-                        <button id="pv-outline" type="button" class="btn btn-outline-primary btn-sm mr-2 mb-2">{% tr "Avbryt" %}</button>
-                        <span id="pv-badge" class="badge badge-primary align-middle"
+                        <button id="pv-solid" type="button" class="btn btn-primary btn-sm me-2 mb-2">{% tr "Spara" %}</button>
+                        <button id="pv-outline" type="button" class="btn btn-outline-primary btn-sm me-2 mb-2">{% tr "Avbryt" %}</button>
+                        <span id="pv-badge" class="badge bg-primary align-middle"
                               style="background-color: {{ current_club.primary_color }};">{% tr "Ny" %}</span>
                     </div>
                 </div>
@@ -62,7 +62,7 @@
 
     <div class="card shadow mb-4">
         <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">{% tr "Logotyp" "Klubbinställningar" %}</h6>
+            <h6 class="m-0 fw-bold text-primary">{% tr "Logotyp" "Klubbinställningar" %}</h6>
         </div>
         <div class="card-body">
             {{ form.logo }}
@@ -73,7 +73,7 @@
 
     <div class="card shadow mb-4">
         <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">{% tr "Bakgrundsbild" "Klubbinställningar" %}</h6>
+            <h6 class="m-0 fw-bold text-primary">{% tr "Bakgrundsbild" "Klubbinställningar" %}</h6>
         </div>
         <div class="card-body">
             {{ form.background_image }}
@@ -96,7 +96,7 @@
                 <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">{% tr "Nej" "Klubbinställningar" %}</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% tr "Nej" "Klubbinställningar" %}</button>
                 <button type="button" class="btn btn-danger" id="remove-image-confirm">{% tr "Ja" "Klubbinställningar" %}</button>
             </div>
         </div>
@@ -187,7 +187,7 @@
         document.querySelectorAll("[data-remove-image]").forEach(function (button) {
             button.addEventListener("click", function () {
                 removeImageField = button.dataset.removeImage;
-                $("#removeImageModal").modal("show");
+                bootstrap.Modal.getOrCreateInstance(document.getElementById("removeImageModal")).show();
             });
         });
 
@@ -205,7 +205,7 @@
                     window.location.reload();
                 })
                 .catch(function () {
-                    $("#removeImageModal").modal("hide");
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById("removeImageModal")).hide();
                     window.alert("{% tr 'Bilden kunde inte tas bort.' 'Klubbinställningar' %}");
                 });
         });

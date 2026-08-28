@@ -12,10 +12,10 @@
         <a href="?status={{ tab.value }}" class="text-decoration-none">
             <div class="card border-left-primary shadow h-100 py-2">
                 <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">{% tr tab.label "Fakturor" %}</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ tab.count }}</div>
+                    <div class="row g-0 align-items-center">
+                        <div class="col me-2">
+                            <div class="text-xs fw-bold text-primary text-uppercase mb-1">{% tr tab.label "Fakturor" %}</div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ tab.count }}</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-file-invoice-dollar fa-2x text-gray-300"></i>
@@ -32,7 +32,7 @@
     <div class="col-lg-4 mb-4">
         <div class="card shadow mb-4">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">{% tr "Avgifter" "Fakturor" %}</h6>
+                <h6 class="m-0 fw-bold text-primary">{% tr "Avgifter" "Fakturor" %}</h6>
             </div>
             <ul class="list-group list-group-flush">
                 {% for fee in fees %}
@@ -56,7 +56,7 @@
     <div class="col-lg-8">
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary">{% tr "Fakturor" "Nav" %}</h6>
+                <h6 class="m-0 fw-bold text-primary">{% tr "Fakturor" "Nav" %}</h6>
                 <a class="btn btn-sm btn-outline-secondary" href="{% url 'payments:list' %}">{% tr "Alla" %}</a>
             </div>
             <div class="card-body">
@@ -69,15 +69,15 @@
                         <tbody>
                             {% for invoice in invoices %}
                             <tr>
-                                <td><a href="{% url 'payments:detail' invoice.pk %}" class="font-weight-bold">{{ invoice.person.last_name }}, {{ invoice.person.first_name }}</a></td>
+                                <td><a href="{% url 'payments:detail' invoice.pk %}" class="fw-bold">{{ invoice.person.last_name }}, {{ invoice.person.first_name }}</a></td>
                                 <td>{{ invoice.title }}</td>
                                 <td>{{ invoice.amount|floatformat:"2" }} kr</td>
                                 <td>{{ invoice.paid_amount|floatformat:"2" }} kr</td>
                                 <td>
-                                    {% if invoice.status == "paid" %}<span class="badge badge-success">{% tr invoice.get_status_display "Fakturor" %}</span>
-                                    {% elif invoice.status == "partly_paid" %}<span class="badge badge-warning text-dark">{% tr invoice.get_status_display "Fakturor" %}</span>
-                                    {% elif invoice.status == "unpaid" %}<span class="badge badge-danger">{% tr invoice.get_status_display "Fakturor" %}</span>
-                                    {% else %}<span class="badge badge-secondary">{% tr invoice.get_status_display "Fakturor" %}</span>{% endif %}
+                                    {% if invoice.status == "paid" %}<span class="badge bg-success">{% tr invoice.get_status_display "Fakturor" %}</span>
+                                    {% elif invoice.status == "partly_paid" %}<span class="badge bg-warning text-dark">{% tr invoice.get_status_display "Fakturor" %}</span>
+                                    {% elif invoice.status == "unpaid" %}<span class="badge bg-danger">{% tr invoice.get_status_display "Fakturor" %}</span>
+                                    {% else %}<span class="badge bg-secondary">{% tr invoice.get_status_display "Fakturor" %}</span>{% endif %}
                                 </td>
                                 <td>{{ invoice.due_date|date:"Y-m-d"|default:"-" }}</td>
                             </tr>

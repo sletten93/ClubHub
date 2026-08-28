@@ -17,7 +17,7 @@
     <div class="col-lg-7">
         <div class="card shadow mb-4">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">{% tr "Deltagare och tränare" "Grupper" %}</h6>
+                <h6 class="m-0 fw-bold text-primary">{% tr "Deltagare och tränare" "Grupper" %}</h6>
             </div>
             <div class="card-body">
                 {% if memberships %}
@@ -31,8 +31,8 @@
                             <tr>
                                 <td>{{ membership.person.last_name }}, {{ membership.person.first_name }}</td>
                                 <td>
-                                    {% if membership.role == "trainer" %}<span class="badge badge-info">{% tr "Tränare" "Grupper" %}</span>
-                                    {% else %}<span class="badge badge-secondary">{% tr "Medlem" "Grupper" %}</span>{% endif %}
+                                    {% if membership.role == "trainer" %}<span class="badge bg-info">{% tr "Tränare" "Grupper" %}</span>
+                                    {% else %}<span class="badge bg-secondary">{% tr "Medlem" "Grupper" %}</span>{% endif %}
                                 </td>
                                 <td>{{ membership.joined_on|date:"Y-m-d" }}</td>
                                 <td>
@@ -56,16 +56,16 @@
 
         <div class="card shadow mb-4">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">{% tr "Lägg till person" "Grupper" %}</h6>
+                <h6 class="m-0 fw-bold text-primary">{% tr "Lägg till person" "Grupper" %}</h6>
             </div>
             <div class="card-body">
                 <form method="post" action="{% url 'groups:membership_add' group.pk %}">
                     {% csrf_token %}
                     <div class="row align-items-end">
-                        <div class="col-md-7 form-group mb-0">{{ membership_form.person }}</div>
-                        <div class="col-md-3 form-group mb-0">{{ membership_form.role }}</div>
+                        <div class="col-md-7 mb-3 mb-0">{{ membership_form.person }}</div>
+                        <div class="col-md-3 mb-3 mb-0">{{ membership_form.role }}</div>
                         <div class="col-md-2">
-                            <button type="submit" class="btn btn-primary btn-block">{% tr "Lägg till" %}</button>
+                            <button type="submit" class="btn btn-primary w-100">{% tr "Lägg till" %}</button>
                         </div>
                     </div>
                 </form>
@@ -76,7 +76,7 @@
     <div class="col-lg-5">
         <div class="card shadow mb-4">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">{% tr "Kommande aktiviteter" "Grupper" %}</h6>
+                <h6 class="m-0 fw-bold text-primary">{% tr "Kommande aktiviteter" "Grupper" %}</h6>
             </div>
             {% if upcoming_activities %}
             <ul class="list-group list-group-flush">

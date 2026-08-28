@@ -10,7 +10,7 @@
 </div>
 <div class="card shadow mb-4">
     <div class="card-header py-3">
-        <h6 class="m-0 font-weight-bold text-primary">{% tr "Grupper" "Nav" %}</h6>
+        <h6 class="m-0 fw-bold text-primary">{% tr "Grupper" "Nav" %}</h6>
     </div>
     <div class="card-body">
         {% if groups %}
@@ -22,7 +22,7 @@
                 <tbody>
                     {% for group in groups %}
                     <tr>
-                        <td><a href="{% url 'groups:detail' group.pk %}" class="font-weight-bold">{{ group.name }}</a></td>
+                        <td><a href="{% url 'groups:detail' group.pk %}" class="fw-bold">{{ group.name }}</a></td>
                         <td>{{ group.member_count }}</td>
                         <td>{{ group.trainer_count }}</td>
                         <td>

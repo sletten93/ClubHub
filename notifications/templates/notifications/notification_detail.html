@@ -15,14 +15,14 @@
 
 <div class="card shadow mb-4">
     <div class="card-header py-3">
-        <h6 class="m-0 font-weight-bold text-primary">{% tr "Ämne" "Meddelanden" %}</h6>
+        <h6 class="m-0 fw-bold text-primary">{% tr "Ämne" "Meddelanden" %}</h6>
     </div>
     <div class="card-body"><pre style="white-space:pre-wrap">{{ notification.body }}</pre></div>
 </div>
 
 <div class="card shadow mb-4">
     <div class="card-header py-3">
-        <h6 class="m-0 font-weight-bold text-primary">{% tr "Leveransstatus" "Meddelanden" %}</h6>
+        <h6 class="m-0 fw-bold text-primary">{% tr "Leveransstatus" "Meddelanden" %}</h6>
     </div>
     <div class="card-body">
         <div class="table-responsive">
@@ -34,9 +34,9 @@
                         <td>{{ recipient.person.full_name }}</td>
                         <td>{{ recipient.person.email|default:"-" }}</td>
                         <td>
-                            {% if recipient.sent_at %}<span class="badge badge-success">{% tr "Skickat" "Meddelanden" %}</span>
-                            {% elif recipient.error %}<span class="badge badge-danger" title="{{ recipient.error }}">{% tr "Fel" "Meddelanden" %}</span>
-                            {% else %}<span class="badge badge-secondary">{% tr "Väntar" "Meddelanden" %}</span>{% endif %}
+                            {% if recipient.sent_at %}<span class="badge bg-success">{% tr "Skickat" "Meddelanden" %}</span>
+                            {% elif recipient.error %}<span class="badge bg-danger" title="{{ recipient.error }}">{% tr "Fel" "Meddelanden" %}</span>
+                            {% else %}<span class="badge bg-secondary">{% tr "Väntar" "Meddelanden" %}</span>{% endif %}
                         </td>
                     </tr>
                     {% empty %}

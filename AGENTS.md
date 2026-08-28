@@ -22,7 +22,7 @@ payment registration, email notifications, public read-only schedule API, club b
 | Django | 6.1 |
 | Database | SQLite (dev). Postgres intended for production |
 | REST API | Django REST Framework 3.18 |
-| Front-end | SB Admin 2 template (Bootstrap 4 + jQuery + FontAwesome + Chart.js), server-rendered Django templates |
+| Front-end | SB Admin 2 look on Bootstrap 5.3.8 (vendored dist, no jQuery) + FontAwesome 5, server-rendered Django templates |
 | Interactivity | HTMX 2 (CDN) — used by the attendance grid |
 | Recurrence | python-dateutil `rrule` |
 | Images | Pillow |
@@ -73,7 +73,13 @@ clubhub/
 ├── templates/       base.html (app shell), auth_base.html, shared/, registration/,
 │                    404.html  (startbootstrap-sb-admin-2-gh-pages/ is only a
 │                    third-party reference copy — do not edit or depend on it)
-└── static/          SB Admin 2 assets copied from the template (css/js/vendor/img)
+└── static/          clubhub.css is a spliced file: stock Bootstrap 5.3.8 dist CSS,
+                     then the SB Admin 2 component layer (sidebar/topbar/gradients,
+                     starts right after the BS5 print-media block), then ClubHub
+                     custom styles (ch-*, table sorting/pagination). Custom rules go
+                     in those later layers, never into the BS5 core. vendor/ holds
+                     only bootstrap/ and fontawesome-free/; static/js/sb-admin-2.js
+                     is vanilla JS (sidebar toggle + scroll-to-top)
 ```
 
 ## Architecture decisions (keep these)
@@ -132,9 +138,14 @@ clubhub/
    overrides. Convention: **primary** = buttons/links/badges/login gradient,
    **secondary** = sidebar gradient. Colors are sanitized defensively in `build_theme`
    (a bad value must never 500 pages).
-10. **Front-end**: SB Admin 2 (Bootstrap 4!). Do not use Bootstrap 5-only classes
-    (`fw-bold`, `me-*`/`ms-*`, `gap-*`, `form-select`, `bg-*-text` badges). Use
-    `font-weight-bold`, `mr-/ml-`, `custom-select`, `badge badge-success`, etc.
+10. **Front-end**: Bootstrap 5.3.8 under an SB Admin 2 skin (migrated from BS4 in
+    2026-08; no jQuery anywhere — Bootstrap bundle + vanilla JS only). Use BS5 syntax:
+    `me-*`/`ms-*` spacing, `fw-bold`, `badge bg-success`, `form-select`, `btn-close`,
+    `g-0`, `data-bs-toggle/-dismiss/-target`, `bootstrap.Modal.getOrCreateInstance(el)`.
+    Do not use removed BS4 classes (`mr-/ml-`, `font-weight-*`, `badge badge-success`,
+    `custom-select`, `form-group`, `btn-block`, `no-gutters`, `dropdown-menu-right`,
+    `.close`, `input-group-append`). Bump the `clubhub.css?v=` cache-buster in
+    `base.html` when the CSS changes.
 
 ## Known gotchas (learned the hard way)
 
@@ -168,7 +179,8 @@ clubhub/
 ## Roadmap / open items
 
 - Member self-service pages (parents see schedule, invoices, their kids)
-- Attendance statistics with Chart.js (vendor already bundled)
+- Attendance statistics with Chart.js (vendor it — Chart.js 4 — when implementing;
+  the old bundled Chart.js 2 was removed with the BS5 migration)
 - Personnummer encryption at rest + audit logging (GDPR)
 - Per-user language setting (plug into `clubs/translations.get_language`)
 - Template-edit regeneration UX (currently regenerates on save)

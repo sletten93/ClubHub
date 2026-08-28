@@ -8,7 +8,7 @@
         <div class="modal-content shadow">
             <div class="modal-header">
                 <h5 class="modal-title text-gray-800">
-                    <i class="fas fa-upload mr-1 text-gray-400"></i>
+                    <i class="fas fa-upload me-1 text-gray-400"></i>
                     {% tr "Importera personer" "Personregister" %}
                 </h5>
             </div>
@@ -26,7 +26,7 @@
                 </p>
                 <div style="max-height:55vh; overflow-y:auto;">
                     <table class="table table-bordered table-sm mb-0" width="100%" cellspacing="0">
-                        <thead class="thead-light">
+                        <thead class="table-light">
                             <tr>
                                 <th>{% tr "Namn" %}</th>
                                 <th>{% tr "Personnummer" "Personregister" %}</th>
@@ -40,7 +40,7 @@
                         <tbody>
                             {% for row in rows %}
                             <tr>
-                                <td class="font-weight-bold">{{ row.first_name }} {{ row.last_name }}</td>
+                                <td class="fw-bold">{{ row.first_name }} {{ row.last_name }}</td>
                                 <td>{% if row.personnummer %}{{ row.personnummer }}{% else %}<span class="text-muted">&mdash;</span>{% endif %}</td>
                                 <td>{{ row.gender }}</td>
                                 <td>{{ row.email }}</td>

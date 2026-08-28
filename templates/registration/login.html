@@ -21,17 +21,17 @@
                             {% endif %}
                             <form class="user" method="post">
                                 {% csrf_token %}
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <input type="text" name="username" id="id_username"
                                            class="form-control form-control-user" placeholder="{% tr 'Användarnamn' 'Inloggning' %}"
                                            autofocus required value="{{ form.username.value|default:'' }}">
                                 </div>
-                                <div class="form-group">
+                                <div class="mb-3">
                                     <input type="password" name="password" id="id_password"
                                            class="form-control form-control-user" placeholder="{% tr 'Lösenord' 'Inloggning' %}" required>
                                 </div>
                                 <input type="hidden" name="next" value="{{ next }}">
-                                <button type="submit" class="btn btn-primary btn-user btn-block">
+                                <button type="submit" class="btn btn-primary btn-user w-100">
                                     {% tr "Logga in" "Inloggning" %}
                                 </button>
                             </form>

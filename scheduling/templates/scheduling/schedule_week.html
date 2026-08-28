@@ -5,7 +5,7 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">{% tr "Schema" "Nav" %} {{ week_start|date:"Y-m-d" }} &ndash; {{ week_end|date:"Y-m-d" }}</h1>
     <div>
-        <a class="btn btn-sm btn-secondary shadow-sm mr-1" href="{% url 'schedule:week' %}?date={{ prev_week }}">
+        <a class="btn btn-sm btn-secondary shadow-sm me-1" href="{% url 'schedule:week' %}?date={{ prev_week }}">
             <i class="fas fa-arrow-left fa-sm"></i> {% tr "Föregående vecka" "Schema" %}</a>
         <a class="btn btn-sm btn-secondary shadow-sm" href="{% url 'schedule:week' %}?date={{ next_week }}">
             {% tr "Nästa vecka" "Schema" %} <i class="fas fa-arrow-right fa-sm"></i></a>
@@ -24,8 +24,8 @@
 {% for day in days %}
 <div class="card shadow mb-4">
     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-        <h6 class="m-0 font-weight-bold text-primary">{{ day.date|date:"D Y-m-d"|capfirst }}</h6>
-        {% if day.is_today %}<span class="badge badge-primary">{% tr "Idag" "Startsida" %}</span>{% endif %}
+        <h6 class="m-0 fw-bold text-primary">{{ day.date|date:"D Y-m-d"|capfirst }}</h6>
+        {% if day.is_today %}<span class="badge bg-primary">{% tr "Idag" "Startsida" %}</span>{% endif %}
     </div>
     {% if day.activities %}
     <div class="table-responsive">
@@ -37,7 +37,7 @@
                 {% for activity in day.activities %}
                 <tr {% if activity.is_cancelled %}class="text-gray-400"{% endif %}>
                     <td>{{ activity.start_time|time:"H:i" }}&ndash;{{ activity.end_time|time:"H:i" }}</td>
-                    <td>{{ activity.title }}{% if activity.is_cancelled %} <span class="badge badge-danger">{% tr "Inställt" "Schema" %}</span>{% endif %}</td>
+                    <td>{{ activity.title }}{% if activity.is_cancelled %} <span class="badge bg-danger">{% tr "Inställt" "Schema" %}</span>{% endif %}</td>
                     <td>{{ activity.group.name }}</td>
                     <td>{{ activity.location|default:"-" }}</td>
                     <td>

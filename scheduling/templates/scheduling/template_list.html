@@ -5,7 +5,7 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">{% tr "Mallar" "Nav" %}</h1>
     <div>
-        <a class="btn btn-sm btn-outline-secondary shadow-sm mr-1" href="{% url 'schedule:season_create' %}">
+        <a class="btn btn-sm btn-outline-secondary shadow-sm me-1" href="{% url 'schedule:season_create' %}">
             <i class="fas fa-plus fa-sm"></i> {% tr "Ny säsong" "Schema" %}</a>
         <a class="btn btn-sm btn-primary shadow-sm" href="{% url 'schedule:template_create' %}">
             <i class="fas fa-plus fa-sm text-white-50"></i> {% tr "Ny aktivitetsmall" "Schema" %}</a>
@@ -16,7 +16,7 @@
     <div class="col-lg-4 mb-4">
         <div class="card shadow mb-4">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">{% tr "Säsong" "Schema" %}</h6>
+                <h6 class="m-0 fw-bold text-primary">{% tr "Säsong" "Schema" %}</h6>
             </div>
             <ul class="list-group list-group-flush">
                 {% for season in seasons %}
@@ -44,7 +44,7 @@
 
         <div class="card shadow mb-4">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">{% tr "Mallar" "Nav" %}</h6>
+                <h6 class="m-0 fw-bold text-primary">{% tr "Mallar" "Nav" %}</h6>
             </div>
             <div class="card-body">
                 {% if templates %}
@@ -56,7 +56,7 @@
                         <tbody>
                             {% for template in templates %}
                             <tr>
-                                <td class="font-weight-bold">{{ template.title }}</td>
+                                <td class="fw-bold">{{ template.title }}</td>
                                 <td>{{ template.season.name }}</td>
                                 <td>{{ template.group.name }}</td>
                                 <td>{{ template.get_recurrence_display }}{% if template.recurrence == "weekly" %}, {{ template.get_weekday_display }}{% endif %}</td>
