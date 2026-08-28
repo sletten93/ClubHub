@@ -1,7 +1,8 @@
 from django import forms
 
-from .form_base import TrModelForm
-from .models import Club
+from .form_base import TrForm, TrModelForm
+from .models import Club, UserProfile
+from .translations import LANGUAGE_NAMES, available_languages, translate
 
 
 class PrettyClearableFileInput(forms.ClearableFileInput):
@@ -77,3 +78,41 @@ class ClubSettingsForm(TrModelForm):
 
     def clean_secondary_color(self):
         return self.cleaned_data["secondary_color"].lower()
+
+
+class UserSettingsForm(TrForm):
+    """Account-level settings for the signed-in user (page /settings/)."""
+
+    label_area = "Inställningar"
+    labels = {
+        "first_name": "Förnamn",
+        "last_name": "Efternamn",
+        "email": "E-post",
+        "language": "Språk",
+    }
+
+    first_name = forms.CharField(max_length=150, required=False)
+    last_name = forms.CharField(max_length=150, required=False)
+    email = forms.EmailField(max_length=254)
+    language = forms.ChoiceField(required=False, choices=[("", "")])
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["language"].choices = [("", translate("Standard", self.label_area))] + [
+            (code, LANGUAGE_NAMES.get(code, code)) for code in available_languages()
+        ]
+
+    def save(self, user):
+        user.email = self.cleaned_data["email"].strip()
+        user.first_name = self.cleaned_data["first_name"].strip()
+        user.last_name = self.cleaned_data["last_name"].strip()
+        user.save(update_fields=["email", "first_name", "last_name"])
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+        profile.language = self.cleaned_data["language"]
+        profile.save()
+        # Keep the club register (and thereby notifications) on the same address.
+        person = getattr(user, "person", None)
+        if person is not None and person.email != user.email:
+            person.email = user.email
+            person.save(update_fields=["email", "updated_at"])
+        return profile

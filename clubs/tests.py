@@ -234,3 +234,88 @@ class NotFoundPageTests(TestCase):
         response = self.client.get("/this-page-does-not-exist/")
         self.assertEqual(response.status_code, 404)
         self.assertContains(response, "404", status_code=404)
+
+
+class UserSettingsTests(TestCase):
+    def setUp(self):
+        from clubs.models import Club
+
+        self.club = Club.objects.create(name="Style BK", slug="stylebk")
+        self.admin_person, self.admin_user = make_staff_user(
+            "boss", is_admin=True, club=self.club
+        )
+
+    def test_settings_requires_login(self):
+        response = self.client.get(reverse("clubs:user_settings"))
+        self.assertEqual(response.status_code, 302)
+
+    def test_settings_page_renders(self):
+        self.client.force_login(self.admin_user)
+        response = self.client.get(reverse("clubs:user_settings"))
+        self.assertContains(response, 'action="/settings/password/"')
+        self.assertContains(response, 'type="password"')
+        self.assertContains(response, "Språk")
+
+    def test_update_profile_fields_and_language(self):
+        self.client.force_login(self.admin_user)
+        response = self.client.post(
+            reverse("clubs:user_settings"),
+            {
+                "first_name": "Anna",
+                "last_name": "Andersson",
+                "email": "anna@example.com",
+                "language": "en-GB",
+            },
+            follow=True,
+        )
+        self.admin_user.refresh_from_db()
+        self.admin_person.refresh_from_db()
+        self.assertEqual(self.admin_user.email, "anna@example.com")
+        self.assertEqual(self.admin_user.first_name, "Anna")
+        self.assertEqual(self.admin_person.email, "anna@example.com")
+        self.assertEqual(self.admin_user.profile.language, "en-GB")
+        # The interface renders in the user's chosen language afterwards.
+        self.assertContains(response, "Account")
+        self.assertContains(response, "Language")
+
+    def test_invalid_language_falls_back_to_default(self):
+        self.client.force_login(self.admin_user)
+        self.client.post(
+            reverse("clubs:user_settings"),
+            {
+                "first_name": "Anna",
+                "last_name": "Andersson",
+                "email": "anna@example.com",
+                "language": "not-a-language",
+            },
+        )
+        response = self.client.get(reverse("clubs:user_settings"))
+        # ChoiceField rejects the value; the form re-renders with an error.
+        self.assertNotContains(response, "sparats")
+
+    def test_password_change_and_old_url_redirect(self):
+        response = self.client.get("/accounts/password_change/")
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.endswith("/settings/"))
+
+        self.client.force_login(self.admin_user)
+        response = self.client.post(
+            reverse("clubs:user_password"),
+            {
+                "old_password": "pw12345!",
+                "new_password1": "newpass99!",
+                "new_password2": "newpass99!",
+            },
+            follow=True,
+        )
+        self.assertContains(response, "ändrats")
+        self.admin_user.refresh_from_db()
+        self.assertTrue(self.admin_user.check_password("newpass99!"))
+
+    def test_favicon_uses_club_logo(self):
+        self.club.logo = SimpleUploadedFile("logo.png", PNG_1PX, content_type="image/png")
+        self.club.save()
+        self.client.force_login(self.admin_user)
+        response = self.client.get(reverse("clubs:home"))
+        self.assertContains(response, 'rel="icon"')
+        self.assertContains(response, self.club.logo.url)

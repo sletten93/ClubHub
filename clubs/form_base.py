@@ -3,7 +3,7 @@ from django import forms
 from .translations import translate
 
 
-class TrModelForm(forms.ModelForm):
+class TranslateLabelsMixin:
     label_area = "Allmän"
     labels = {}
 
@@ -12,3 +12,11 @@ class TrModelForm(forms.ModelForm):
         for name, key in self.labels.items():
             if name in self.fields:
                 self.fields[name].label = translate(key, self.label_area)
+
+
+class TrForm(TranslateLabelsMixin, forms.Form):
+    pass
+
+
+class TrModelForm(TranslateLabelsMixin, forms.ModelForm):
+    pass

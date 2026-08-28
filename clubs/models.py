@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.validators import FileExtensionValidator, RegexValidator
 from django.db import models
 
@@ -40,3 +41,19 @@ class Club(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class UserProfile(models.Model):
+    """Per-login-account preferences (clubs belong to persons, but settings
+    like language follow the User, which may exist without a Person)."""
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile"
+    )
+    # Empty means "use the system default" (settings.CLUBHUB_LANGUAGE).
+    language = models.CharField(max_length=10, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.user.get_username()

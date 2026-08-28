@@ -14,13 +14,20 @@
                 <i class="fas fa-upload fa-sm text-white-50"></i> {% tr "Importera" "Personregister" %}
             </button>
         </form>
+        <button type="button" class="btn btn-sm btn-secondary shadow-sm me-2"
+                data-bs-toggle="modal" data-bs-target="#export-modal">
+            <i class="fas fa-download fa-sm text-white-50"></i> {% tr "Exportera" "Personregister" %}
+        </button>
         <a class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" href="{% url 'people:create' %}">
             <i class="fas fa-plus fa-sm text-white-50"></i> {% tr "Ny person" "Personregister" %}
         </a>
     </div>
 </div>
 {% if people or is_filtered %}
-<form method="get" action="{% url 'people:register' %}" id="person-filter-form" class="mb-3">
+{# Filter changes go through HTMX: only the table area is swapped, so the dropdown stays open. #}
+<form method="get" action="{% url 'people:register' %}" id="person-filter-form" class="mb-3"
+      hx-get="{% url 'people:register' %}" hx-target="#register-table-area"
+      hx-select="#register-table-area" hx-swap="outerHTML" hx-push-url="true">
     <div class="d-flex align-items-center flex-wrap">
         <div class="d-flex align-items-center me-2">
             <input type="text" name="q" value="{{ search }}" class="form-control bg-light border-0 small"
@@ -110,44 +117,46 @@
         <input type="hidden" name="sort" value="{{ sort }}">
         <input type="hidden" name="dir" value="{{ dir }}">
         <input type="hidden" name="per_page" value="{{ per_page }}">
-        <input type="hidden" name="filters_set" value="1">
     </div>
 </form>
+<div id="register-table-area">
 <div class="ch-table-card">
     <div class="ch-table-card-header">
         {% include "shared/table_header.html" %}
     </div>
     {% if people %}
-    <table class="table table-bordered ch-table" width="100%" cellspacing="0">
-        <thead>
-            <tr>
-                {% for col in columns %}
-                <th {% if col.width %}style="width:{{ col.width }}"{% endif %}{% if sort == col.key %} class="active-sort"{% endif %}>
-                    <a class="th-sort-link" href="{{ col.url }}">
-                        <span>{{ col.label }}</span>
-                        <i class="fas {{ col.icon }} th-sort-icon" aria-hidden="true"></i>
-                    </a>
-                </th>
+    <div class="table-responsive">
+        <table class="table table-bordered ch-table" width="100%" cellspacing="0">
+            <thead>
+                <tr>
+                    {% for col in columns %}
+                    <th {% if col.width %}style="width:{{ col.width }}"{% endif %}{% if sort == col.key %} class="active-sort"{% endif %}>
+                        <a class="th-sort-link" href="{{ col.url }}">
+                            <span>{{ col.label }}</span>
+                            <i class="fas {{ col.icon }} th-sort-icon" aria-hidden="true"></i>
+                        </a>
+                    </th>
+                    {% endfor %}
+                    <th style="width:160px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for person in people %}
+                <tr>
+                    <td>{{ person.member_number }}</td>
+                    <td class="fw-bold">{{ person.full_name }}</td>
+                    <td>{% if person.personnummer %}{{ person.personnummer }}{% else %}<span class="text-muted">&mdash;</span>{% endif %}</td>
+                    <td>{{ person.email }}</td>
+                    <td>{{ person.phone_mobile }}</td>
+                    <td>
+                        <a class="btn btn-sm btn-outline-secondary" href="{% url 'people:update' person.pk %}">{% tr "Ändra" %}</a>
+                        <a class="btn btn-sm btn-outline-danger" href="{% url 'people:delete' person.pk %}">{% tr "Ta bort" %}</a>
+                    </td>
+                </tr>
                 {% endfor %}
-                <th style="width:160px"></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for person in people %}
-            <tr>
-                <td>{{ person.member_number }}</td>
-                <td class="fw-bold">{{ person.full_name }}</td>
-                <td>{% if person.personnummer %}{{ person.personnummer }}{% else %}<span class="text-muted">&mdash;</span>{% endif %}</td>
-                <td>{{ person.email }}</td>
-                <td>{{ person.phone_mobile }}</td>
-                <td>
-                    <a class="btn btn-sm btn-outline-secondary" href="{% url 'people:update' person.pk %}">{% tr "Ändra" %}</a>
-                    <a class="btn btn-sm btn-outline-danger" href="{% url 'people:delete' person.pk %}">{% tr "Ta bort" %}</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div>
     {% else %}
     <div class="ch-table-card-empty">
         <p class="text-muted mb-0">{% tr "Inga personer matchar sökningen eller filtret." "Personregister" %}</p>
@@ -157,9 +166,50 @@
         {% include "shared/table_footer.html" %}
     </div>
 </div>
+</div>
 {% else %}
 <p class="text-muted mb-0">{% tr "Inga personer registrerade ännu." "Personregister" %}</p>
 {% endif %}
+
+<div class="modal fade" id="export-modal" tabindex="-1"
+     aria-labelledby="export-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="export-modal-title">
+                    {% tr "Exportera personregister" "Personregister" %}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="{% tr "Stäng" %}"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info py-2 small mb-3">
+                    <i class="fas fa-info-circle fa-sm me-1"></i>
+                    {% tr "Exporten använder den sökning och de filter som är aktiva just nu." "Personregister" %}
+                </div>
+                <p class="fw-bold mb-2">{% tr "Välj filformat" "Personregister" %}</p>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="export-format"
+                           id="export-format-xlsx" value="xlsx" checked>
+                    <label class="form-check-label" for="export-format-xlsx">XLSX (Excel)</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="export-format"
+                           id="export-format-xml" value="xml">
+                    <label class="form-check-label" for="export-format-xml">XML</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    {% tr "Avbryt" %}
+                </button>
+                <button type="button" class="btn btn-primary" id="export-confirm-btn">
+                    <i class="fas fa-download fa-sm text-white-50"></i> {% tr "Exportera" "Personregister" %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 {% block extra_scripts %}
 <script>
@@ -169,16 +219,20 @@
         }
     });
 
+    var filterForm = document.getElementById('person-filter-form');
+
     var clearBtn = document.getElementById('clear-search-btn');
     if (clearBtn) {
         clearBtn.addEventListener('click', function () {
             document.querySelector('#person-filter-form input[name="q"]').value = '';
-            document.getElementById('person-filter-form').submit();
+            filterForm.requestSubmit();
         });
     }
 
-    // Keep the filter dropdown open while toggling checkboxes and
-    // re-submit the filter form whenever a checkbox changes.
+    // Re-run the filter form whenever a checkbox changes. requestSubmit
+    // fires the submit event, which HTMX intercepts and turns into a
+    // partial swap of the table area, so the page — and with it the open
+    // dropdown and any clicks queued behind this one — is never reloaded.
     var filterMenu = document.querySelector('#person-filter-dropdown .dropdown-menu');
     if (filterMenu) {
         filterMenu.addEventListener('click', function (event) {
@@ -187,8 +241,20 @@
     }
     document.querySelectorAll('#person-filter-dropdown input.person-filter-checkbox').forEach(function (box) {
         box.addEventListener('change', function () {
-            document.getElementById('person-filter-form').submit();
+            filterForm.requestSubmit();
         });
+    });
+
+    // Download the export with the query string currently in the address
+    // bar (that is what "active filters" means), minus pagination since an
+    // export always contains every matching row.
+    document.getElementById('export-confirm-btn').addEventListener('click', function () {
+        var format = document.querySelector('input[name="export-format"]:checked').value;
+        var params = new URLSearchParams(window.location.search);
+        params.delete('page');
+        params.set('format', format);
+        window.location.href = window.location.pathname + '?' + params.toString();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('export-modal')).hide();
     });
 </script>
 {% endblock %}

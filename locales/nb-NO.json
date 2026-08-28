@@ -39,7 +39,8 @@
     "Notiscenter": "Varslingssenter",
     "Inga nya notiser.": "Ingen nye varsler.",
     "Meddelandecentral": "Meldingssenter",
-    "Personregister": "Personregister"
+    "Personregister": "Personregister",
+    "Inställningar": "Innstillinger"
   },
   "Inloggning": {
     "Logga in": "Logg inn",
@@ -200,13 +201,22 @@
     "Inställningarna har sparats.": "Innstillingene er lagret.",
     "Knappar, länkar, badges och fokusmarkering.": "Knapper, lenker, merker og fokusmarkering.",
     "Menyraden i toppen.": "Menylinjen på toppen.",
-    "Visas i menyn och på startsidan. PNG, JPG eller WebP.": "Vises i menyen og på startsiden. PNG, JPG eller WebP.",
     "Används som diskret bakgrund bakom innehållet, med en ljus transparent överlägg för läsbarhet.": "Brukes som diskret bakgrunn bak innholdet, med et lyst transparent overlegg for lesbarhet.",
     "Menyn till vänster.": "Menyen til venstre.",
     "Är du säker på att du vill ta bort bilden?": "Er du sikker på at du vil fjerne bildet?",
     "Ja": "Ja",
     "Nej": "Nei",
-    "Bilden kunde inte tas bort.": "Kunne ikke fjerne bildet."
+    "Bilden kunde inte tas bort.": "Kunne ikke fjerne bildet.",
+    "Visas i menyn, på startsidan och som favicon. PNG, JPG eller WebP.": "Vises i menyen, på startsiden og som favicon. PNG, JPG eller WebP."
+  },
+  "Inställningar": {
+    "Konto": "Konto",
+    "Förnamn": "Fornavn",
+    "Efternamn": "Etternavn",
+    "E-post": "E-post",
+    "Språk": "Språk",
+    "Standard": "Standard",
+    "Inställningarna har sparats.": "Innstillingene er lagret."
   },
   "Personregister": {
     "Personregister": "Personregister",
@@ -242,6 +252,10 @@
     "Nr": "Nr",
     "Importera": "Importer",
     "Importera personer": "Importer personer",
+    "Exportera": "Eksporter",
+    "Exportera personregister": "Eksporter personregister",
+    "Välj filformat": "Velg filformat",
+    "Exporten använder den sökning och de filter som är aktiva just nu.": "Eksporten bruker søket og filtrene som er aktive akkurat nå.",
     "Varningar": "Advarsler",
     "Målsman": "Verge",
     "Adress": "Adresse",

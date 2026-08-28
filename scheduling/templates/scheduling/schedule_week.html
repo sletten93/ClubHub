@@ -31,7 +31,7 @@
     <div class="table-responsive">
         <table class="table table-bordered mb-0" width="100%" cellspacing="0">
             <thead>
-                <tr><th style="width:110px">{% tr "Tid" %}</th><th>{% tr "Aktivitet" "Schema" %}</th><th>{% tr "Grupp" %}</th><th>{% tr "Plats" %}</th><th style="width:170px"></th></tr>
+                <tr><th style="width:110px">{% tr "Tid" %}</th><th>{% tr "Aktivitet" "Schema" %}</th><th>{% tr "Grupp" %}</th><th>{% tr "Plats" %}</th><th style="width:220px"></th></tr>
             </thead>
             <tbody>
                 {% for activity in day.activities %}
@@ -40,7 +40,7 @@
                     <td>{{ activity.title }}{% if activity.is_cancelled %} <span class="badge bg-danger">{% tr "Inställt" "Schema" %}</span>{% endif %}</td>
                     <td>{{ activity.group.name }}</td>
                     <td>{{ activity.location|default:"-" }}</td>
-                    <td>
+                    <td class="text-nowrap">
                         <a class="btn btn-sm btn-primary" href="{% url 'attendance:take' activity.pk %}">{% tr "Närvaro" "Startsida" %}</a>
                         <a class="btn btn-sm btn-outline-secondary" href="{% url 'schedule:activity_update' activity.pk %}">{% tr "Ändra" %}</a>
                         <a class="btn btn-sm btn-outline-danger" href="{% url 'schedule:activity_delete' activity.pk %}">{% tr "Ta bort" %}</a>

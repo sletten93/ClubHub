@@ -13724,6 +13724,9 @@ form.user .btn-user {
 }
 
 footer.sticky-footer {
+  /* Standard gap above the footer so it never hugs the content above
+     (e.g. the table card footer bar on /registry/). */
+  margin-top: 1.5rem;
   padding: 2rem 0;
   flex-shrink: 0;
 }
@@ -13979,4 +13982,202 @@ input[type="file"]::file-selector-button {
   outline: 0;
   border-color: var(--ch-primary, #bac8f3);
   box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+}
+
+/* Color pickers: keep the native swatch size, but wrap it in the standard
+   input border with a padding gap between the swatch and the border. */
+.ch-float > input[type="color"] {
+  width: 2.75rem;
+  height: 1.75rem;
+  padding: 0.2rem 0.25rem;
+  background-color: #fff;
+  border: 1px solid #d1d3e2;
+  border-radius: 0.35rem;
+  cursor: pointer;
+}
+
+.ch-float > input[type="color"]:focus {
+  border-color: var(--ch-primary, #bac8f3);
+  box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+  outline: 0;
+}
+
+.ch-float > input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.ch-float > input[type="color"]::-webkit-color-swatch {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 0.2rem;
+}
+
+.ch-float > input[type="color"]::-moz-color-swatch {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 0.2rem;
+}
+
+/* Color settings: the live preview box next to the pickers. */
+.ch-color-preview {
+  max-width: 300px;
+}
+
+/* Tables (.table-bordered): separate rows with a bottom border on body rows
+   only — BS5's top+bottom row border pair renders as doubled, glitchy lines
+   next to the themed header. The header row keeps no border of its own (its
+   filled background separates it). Header cells keep BS5's vertical column
+   borders, but the theme paints them in the header's own background color:
+   they then mask sub-pixel background seams between cells (visible at some
+   zoom levels) without reading as lines. */
+.table-bordered > :not(caption):not(thead) > * {
+  border-top-width: 0;
+  border-bottom-width: var(--bs-border-width);
+}
+
+.table-bordered > thead > * {
+  border-width: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Tables inside cards: flush against the card edges (like /schedule/) */
+/* ------------------------------------------------------------------ */
+
+/* A card-body whose only content is a table renders it edge to edge —
+   no 1rem padding gap between the card border and the table. When other
+   content (filters, intro text) shares the card-body above the table,
+   only the bottom padding is dropped so the table still meets the
+   card's bottom edge. Cards without a table keep their padding. */
+.card > .card-body:has(> .table-responsive:only-child) {
+  padding: 0;
+}
+
+.card > .card-body:has(> .table-responsive:last-child) {
+  padding-bottom: 0;
+}
+
+/* The default 1rem .table margin would open a gap between the table and
+   the card edge (cards are flex columns, so it never collapses away).
+   Only reset it when the table is the card's last content; tables with
+   siblings below keep their separation. */
+.card > .table-responsive > .table:last-child,
+.card > .card-body > .table-responsive:last-child > .table:last-child {
+  margin-bottom: 0;
+}
+
+/* Let the card clip the table to its rounded corners — a flush table
+   has square corners that would otherwise poke out of the card. */
+.card:has(> .table-responsive),
+.card:has(> .card-body > .table-responsive) {
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------------ */
+/* Tables on small screens: card scrollbars, single-line headers      */
+/* ------------------------------------------------------------------ */
+
+/* Synced scrollbar rendered above the .table-responsive of paginated
+   table cards (.ch-table-card) by clubhub.js. JS drives the height:
+   zero while the table fits, else the thickness of a native scrollbar
+   (stays hidden on overlay-scrollbar platforms). */
+.ch-hscroll-proxy {
+  height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.ch-hscroll-proxy > div {
+  /* Width is set from the table by JS. */
+  height: 1px;
+  width: 100px;
+  font-size: 0;
+  line-height: 0;
+}
+
+/* Header cells stay on one line: a wrapping header ("Medlemmar" on
+   /groups/ at phone widths) grows taller than its data rows. Wide
+   tables scroll horizontally instead. Scoped to the app shell — the
+   Django admin lays out its own tables. */
+#page-top table thead th {
+  white-space: nowrap;
+}
+
+/* Action buttons inside table cells stay on one line: this vendored
+   Bootstrap 5 build (like stock BS5) lets .btn text wrap, and stacked
+   or wrapped buttons in a squeezed actions column double every row
+   height. :has() keeps the gap between sibling buttons unbreakable
+   too, so the column gets its full side-by-side width when the table
+   scrolls horizontally on phones. */
+#page-top .table td .btn {
+  white-space: nowrap;
+}
+
+#page-top .table td:has(> .btn) {
+  white-space: nowrap;
+}
+
+@media (max-width: 575.98px) {
+  /* Tighter page gutters on phones. */
+  .container-fluid {
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+
+  /* A little less horizontal cell padding on phones. */
+  .table > :not(caption) > * > * {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  /* Headers stop driving column widths: clubhub.js wraps plain header
+     text in a .th-label, which is taken out of flow and clipped to
+     whatever width the data cells gave the column — "Medlemmar"
+     shrinks to a digit's width on /groups/ and the word truncates
+     instead of widening the column. Sortable headers (.th-sort-link)
+     get the same treatment. 2.5rem holds the bar's height while the
+     cell content is out of flow. */
+  #page-top table thead th {
+    position: relative;
+    height: 2.5rem;
+  }
+
+  #page-top table thead th > .th-label {
+    position: absolute;
+    top: 50%;
+    left: 0.5rem;
+    right: 0.5rem;
+    transform: translateY(-50%);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #page-top table thead th a.th-sort-link {
+    position: absolute;
+    top: 50%;
+    left: 0.5rem;
+    right: 0.5rem;
+    width: auto;
+    transform: translateY(-50%);
+  }
+
+  #page-top table thead th a.th-sort-link > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #page-top table thead th a.th-sort-link .th-sort-icon {
+    flex: none;
+  }
+
+  /* The page bar (rows-per-page / arrows / "1-10 av 53") overflows its
+     1fr auto 1fr grid on phones — stack it instead. */
+  .ch-page-bar {
+    grid-template-columns: 1fr;
+    row-gap: 0.35rem;
+  }
+
+  .ch-page-size,
+  .ch-page-nav,
+  .ch-page-entries {
+    justify-self: center;
+  }
 }

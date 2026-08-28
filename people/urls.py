@@ -11,4 +11,5 @@ urlpatterns = [
     path('<int:pk>/delete/', views.PersonDeleteView.as_view(), name='delete'),
     path('import/', views.PersonImportPreviewView.as_view(), name='import_preview'),
     path('import/confirm/', views.PersonImportConfirmView.as_view(), name='import_confirm'),
+    path('export/', views.PersonExportView.as_view(), name='export'),
 ]

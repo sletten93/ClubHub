@@ -39,7 +39,8 @@
     "Notiscenter": "Notiscenter",
     "Inga nya notiser.": "Inga nya notiser.",
     "Meddelandecentral": "Meddelandecentral",
-    "Personregister": "Personregister"
+    "Personregister": "Personregister",
+    "Inställningar": "Inställningar"
   },
   "Inloggning": {
     "Logga in": "Logga in",
@@ -200,13 +201,22 @@
     "Inställningarna har sparats.": "Inställningarna har sparats.",
     "Knappar, länkar, badges och fokusmarkering.": "Knappar, länkar, badges och fokusmarkering.",
     "Menyraden i toppen.": "Menyraden i toppen.",
-    "Visas i menyn och på startsidan. PNG, JPG eller WebP.": "Visas i menyn och på startsidan. PNG, JPG eller WebP.",
     "Används som diskret bakgrund bakom innehållet, med en ljus transparent överlägg för läsbarhet.": "Används som diskret bakgrund bakom innehållet, med en ljus transparent överlägg för läsbarhet.",
     "Menyn till vänster.": "Menyn till vänster.",
     "Är du säker på att du vill ta bort bilden?": "Är du säker på att du vill ta bort bilden?",
     "Ja": "Ja",
     "Nej": "Nej",
-    "Bilden kunde inte tas bort.": "Bilden kunde inte tas bort."
+    "Bilden kunde inte tas bort.": "Bilden kunde inte tas bort.",
+    "Visas i menyn, på startsidan och som favicon. PNG, JPG eller WebP.": "Visas i menyn, på startsidan och som favicon. PNG, JPG eller WebP."
+  },
+  "Inställningar": {
+    "Konto": "Konto",
+    "Förnamn": "Förnamn",
+    "Efternamn": "Efternamn",
+    "E-post": "E-post",
+    "Språk": "Språk",
+    "Standard": "Standard",
+    "Inställningarna har sparats.": "Inställningarna har sparats."
   },
   "Personregister": {
     "Personregister": "Personregister",
@@ -242,6 +252,10 @@
     "Nr": "Nr",
     "Importera": "Importera",
     "Importera personer": "Importera personer",
+    "Exportera": "Exportera",
+    "Exportera personregister": "Exportera personregister",
+    "Välj filformat": "Välj filformat",
+    "Exporten använder den sökning och de filter som är aktiva just nu.": "Exporten använder den sökning och de filter som är aktiva just nu.",
     "Varningar": "Varningar",
     "Målsman": "Målsman",
     "Adress": "Adress",

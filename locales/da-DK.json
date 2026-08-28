@@ -39,7 +39,8 @@
     "Notiscenter": "Påmindelsescenter",
     "Inga nya notiser.": "Ingen nye påmindelser.",
     "Meddelandecentral": "Beskedcenter",
-    "Personregister": "Personregister"
+    "Personregister": "Personregister",
+    "Inställningar": "Indstillinger"
   },
   "Inloggning": {
     "Logga in": "Log ind",
@@ -200,13 +201,22 @@
     "Inställningarna har sparats.": "Indstillingerne blev gemt.",
     "Knappar, länkar, badges och fokusmarkering.": "Knapper, links, badges og fokusmarkering.",
     "Menyraden i toppen.": "Menulinjen i toppen.",
-    "Visas i menyn och på startsidan. PNG, JPG eller WebP.": "Vises i menuen og på forsiden. PNG, JPG eller WebP.",
     "Används som diskret bakgrund bakom innehållet, med en ljus transparent överlägg för läsbarhet.": "Bruges som diskret baggrund bag indholdet, med et lyst transparent overlag for læsbarhed.",
     "Menyn till vänster.": "Menuen til venstre.",
     "Är du säker på att du vill ta bort bilden?": "Er du sikker på, at du vil fjerne billedet?",
     "Ja": "Ja",
     "Nej": "Nej",
-    "Bilden kunde inte tas bort.": "Billedet kunne ikke fjernes."
+    "Bilden kunde inte tas bort.": "Billedet kunne ikke fjernes.",
+    "Visas i menyn, på startsidan och som favicon. PNG, JPG eller WebP.": "Vises i menuen, på startsiden og som favicon. PNG, JPG eller WebP."
+  },
+  "Inställningar": {
+    "Konto": "Konto",
+    "Förnamn": "Fornavn",
+    "Efternamn": "Efternavn",
+    "E-post": "E-mail",
+    "Språk": "Sprog",
+    "Standard": "Standard",
+    "Inställningarna har sparats.": "Indstillingerne er gemt."
   },
   "Personregister": {
     "Personregister": "Personregister",
@@ -242,6 +252,10 @@
     "Nr": "Nr",
     "Importera": "Importér",
     "Importera personer": "Importér personer",
+    "Exportera": "Eksportér",
+    "Exportera personregister": "Eksportér personregister",
+    "Välj filformat": "Vælg filformat",
+    "Exporten använder den sökning och de filter som är aktiva just nu.": "Eksporten bruger søgningen og filtrene, som er aktive lige nu.",
     "Varningar": "Advarsler",
     "Målsman": "Værge",
     "Adress": "Adresse",

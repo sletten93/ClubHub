@@ -1,4 +1,5 @@
 import io
+import xml.etree.ElementTree as ET
 from datetime import date
 from urllib.parse import parse_qs
 
@@ -402,9 +403,6 @@ class PersonRegisterViewTests(TestCase):
         return complete_pnr(f"{year:02d}0101123")
 
     def get(self, **params):
-        # The real filter form always posts `filters_set`; without it the
-        # view applies the default filters. Tests opt out explicitly.
-        params.setdefault("filters_set", "1")
         return self.client.get(reverse("people:register"), params)
 
     def test_search_matches_name_and_member_number(self):
@@ -565,7 +563,7 @@ class PersonRegisterViewTests(TestCase):
         self.assertEqual(response.context["sort"], "nr")
         self.assertEqual(response.context["dir"], "asc")
 
-    def test_defaults_sort_by_member_number_and_filter_all_but_guardian(self):
+    def test_defaults_show_everyone_sorted_by_member_number(self):
         member = self.make_person(
             "Mimmi", "Medlem", personnummer=self.pnr_for_age(20),
             gender=Person.Gender.FEMALE,
@@ -576,26 +574,34 @@ class PersonRegisterViewTests(TestCase):
         GuardianRelation.objects.create(guardian=guardian, child=child)
         untagged = self.make_person("Nils", "Ingen")
 
-        # First visit: no query params at all, so the defaults kick in.
+        # First visit: no query params at all -> no filters applied, so
+        # members, guardians, children and untagged persons all show up.
         response = self.client.get(reverse("people:register"))
-        # Defaults: sorted by member number asc; members + trainers +
-        # all ages shown, guardians without membership are not.
         self.assertEqual((response.context["sort"], response.context["dir"]), ("nr", "asc"))
-        self.assertEqual(
-            {p.last_name for p in response.context["people"]}, {"Medlem"}
-        )
-
-        # Submitting the form with every box unchecked clears the filters.
-        response = self.get(filters_set="1")
         self.assertEqual(
             {p.last_name for p in response.context["people"]},
             {"Medlem", "Foralder", "Barn", "Ingen", "Admin"},
+        )
+        self.assertFalse(response.context["is_filtered"])
+        self.assertEqual(
+            response.context["active_filters"],
+            {"role": [], "payment": [], "age": [], "gender": []},
         )
 
     def test_filtered_empty_shows_match_message(self):
         response = self.get(q="finnsinte")
         self.assertContains(response, "Inga personer matchar sökningen eller filtret.")
         self.assertNotContains(response, "Inga personer registrerade ännu.")
+
+    def test_export_button_and_modal_render(self):
+        response = self.get()
+        self.assertContains(response, 'data-bs-target="#export-modal"')
+        self.assertContains(response, 'data-bs-target="#export-modal"')
+        self.assertContains(response, 'id="export-modal"')
+        self.assertContains(response, 'value="xlsx" checked')
+        self.assertContains(response, 'value="xml"')
+        # The modal spells out that active search/filters carry over.
+        self.assertContains(response, "aktiva just nu.")
 
     def test_pagination_defaults_and_page_size_links(self):
         response = self.get()
@@ -658,3 +664,128 @@ class PersonRegisterViewTests(TestCase):
         self.assertEqual(query.get("dir"), ["asc"])
         self.assertEqual(query.get("sort"), ["nr"])
 
+
+
+class PersonExportViewTests(TestCase):
+    def setUp(self):
+        self.club = Club.objects.create(name="Export BK", slug="exportbk")
+        self.admin_user = User.objects.create_user(username="boss", password="pw12345!")
+        admin_person = Person.objects.create(
+            club=self.club,
+            first_name="Anna",
+            last_name="Admin",
+            email="anna@example.com",
+            user=self.admin_user,
+        )
+        StaffProfile.objects.create(person=admin_person, is_admin=True)
+        self.client.force_login(self.admin_user)
+        self.url = reverse("people:export")
+
+    def make_person(self, first_name, last_name, **kwargs):
+        return Person.objects.create(
+            club=self.club, first_name=first_name, last_name=last_name, **kwargs
+        )
+
+    def test_requires_admin(self):
+        self.client.logout()
+        self.assertEqual(self.client.get(self.url).status_code, 302)
+        outsider = User.objects.create_user(username="out", password="pw12345!")
+        self.client.force_login(outsider)
+        self.assertEqual(self.client.get(self.url).status_code, 403)
+        # Plain staff (no admin flag) is not enough either.
+        staff_user = User.objects.create_user(username="staff", password="pw12345!")
+        staff_person = Person.objects.create(
+            club=self.club, first_name="Sten", last_name="Staff", user=staff_user
+        )
+        StaffProfile.objects.create(person=staff_person)
+        self.client.force_login(staff_user)
+        self.assertEqual(self.client.get(self.url).status_code, 403)
+
+    def test_xlsx_export_contains_header_and_rows(self):
+        berg_pnr = complete_pnr("041003123")
+        self.make_person(
+            "Bengt", "Berg",
+            personnummer=berg_pnr,
+            email="berg@example.com", phone_mobile="0701234567",
+        )
+        self.make_person("Cecilia", "Carlsson")
+        response = self.client.get(self.url, {"format": "xlsx"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response["Content-Type"],
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        self.assertIn("attachment", response["Content-Disposition"])
+        self.assertIn("personregister-", response["Content-Disposition"])
+        self.assertIn(".xlsx", response["Content-Disposition"])
+
+        workbook = openpyxl.load_workbook(io.BytesIO(response.content))
+        sheet = workbook.active
+        rows = list(sheet.iter_rows(values_only=True))
+        self.assertEqual(
+            list(rows[0]),
+            ["MedlemsNr", "Förnamn", "Efternamn", "Personnummer", "E-post", "Mobiltelefon"],
+        )
+        # Header plus every person in the club, admin included, in
+        # member-number order.
+        self.assertEqual(len(rows), 4)
+        self.assertEqual(rows[1][1:3], ("Anna", "Admin"))
+        self.assertEqual(rows[2][1:3], ("Bengt", "Berg"))
+        self.assertEqual(rows[2][3], "20" + berg_pnr)
+        self.assertEqual(rows[2][4], "berg@example.com")
+
+    def test_xml_export_is_valid_and_nested(self):
+        self.make_person("Bengt", "Berg", email="berg@example.com")
+        response = self.client.get(self.url, {"format": "xml"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/xml; charset=utf-8")
+        self.assertIn("attachment", response["Content-Disposition"])
+        self.assertIn(".xml", response["Content-Disposition"])
+
+        root = ET.fromstring(response.content)
+        self.assertEqual(root.tag, "personregister")
+        persons = root.findall("person")
+        self.assertEqual(len(persons), 2)
+        bengt = persons[1]
+        self.assertEqual(bengt.findtext("fornamn"), "Bengt")
+        self.assertEqual(bengt.findtext("efternamn"), "Berg")
+        self.assertEqual(bengt.findtext("epost"), "berg@example.com")
+        self.assertEqual(bengt.findtext("personnummer"), "")
+
+    def test_export_respects_search_and_filters(self):
+        member = self.make_person("Mimmi", "Medlem", email="mimmi@example.com")
+        Membership.objects.create(person=member, start_date=date(2026, 1, 1))
+        self.make_person("Gunilla", "Foralder")
+
+        def exported_names(**params):
+            response = self.client.get(self.url, {"format": "xml", **params})
+            root = ET.fromstring(response.content)
+            return {p.findtext("efternamn") for p in root.findall("person")}
+
+        # No params: everything (default state is no filtering at all).
+        self.assertEqual(exported_names(), {"Admin", "Medlem", "Foralder"})
+        # Role filter narrows the export (the admin is not a member)...
+        self.assertEqual(exported_names(role="member"), {"Medlem"})
+        # ...as does the search box.
+        self.assertEqual(exported_names(q="mimmi"), {"Medlem"})
+        # Sort is honoured too.
+        response = self.client.get(self.url, {"format": "xml", "sort": "name", "dir": "desc"})
+        root = ET.fromstring(response.content)
+        self.assertEqual(
+            [p.findtext("efternamn") for p in root.findall("person")],
+            ["Medlem", "Foralder", "Admin"],
+        )
+
+    def test_export_ignores_pagination(self):
+        for index in range(45):
+            self.make_person("Först", f"Person{index:02d}")
+        response = self.client.get(self.url, {"format": "xml", "page": "2", "per_page": "40"})
+        root = ET.fromstring(response.content)
+        self.assertEqual(len(root.findall("person")), 46)
+
+    def test_unknown_format_falls_back_to_xlsx(self):
+        response = self.client.get(self.url, {"format": "exe"})
+        self.assertEqual(
+            response["Content-Type"],
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )

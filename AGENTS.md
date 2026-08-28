@@ -130,8 +130,12 @@ clubhub/
    raw key (so missing translations degrade gracefully, never crash). Use
    `{% tr "Spara" %}` / `{% tr "Titel" "Schema" %}` in templates and
    `translate("...", "<Area>")` from `clubs.translations` in Python. Language is
-   resolved in ONE place: `clubs/translations.py:get_language()` (currently reads
-   `settings.CLUBHUB_LANGUAGE`). Per-user language preference should plug in there.
+   resolved in ONE place: `clubs/translations.py:get_language()` — the signed-in
+   user's `UserProfile.language` (editable on `/settings/`) when set, otherwise
+   `settings.CLUBHUB_LANGUAGE`. `clubs.middleware.CurrentRequestMiddleware` binds the
+   request to a contextvar so `get_language()` can see the user without threading the
+   request through every call; the result is cached per request (use
+   `reset_language_cache()` after changing the preference mid-request).
 9. **Theming**: `clubs/utils.py:build_theme(club)` computes shades/contrast from
    `Club.primary_color`/`secondary_color`; `clubs/context_processors.club_context`
    injects `current_club` + `theme` into every response; `base.html` emits CSS
@@ -182,7 +186,6 @@ clubhub/
 - Attendance statistics with Chart.js (vendor it — Chart.js 4 — when implementing;
   the old bundled Chart.js 2 was removed with the BS5 migration)
 - Personnummer encryption at rest + audit logging (GDPR)
-- Per-user language setting (plug into `clubs/translations.get_language`)
 - Template-edit regeneration UX (currently regenerates on save)
 - Deployment hardening: Postgres, env-based settings, gunicorn/nginx, media storage,
   API versioning/caching

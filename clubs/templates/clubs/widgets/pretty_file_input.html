@@ -9,7 +9,8 @@
 {% endif %}
 <div class="ch-file-row">
     {% if widget.is_initial %}
-    <button type="button" class="btn btn-sm btn-outline-danger me-2" data-remove-image="{{ widget.name }}">{% tr 'Ta bort' %}</button>
+    <button type="button" class="btn btn-sm btn-outline-danger me-2" data-remove-image="{{ widget.name }}"
+            data-cancel-label="{% tr 'Avbryt' %}">{% tr 'Ta bort' %}</button>
     {% endif %}
     <span class="ch-file">
         <input type="{{ widget.type }}" name="{{ widget.name }}" data-preview-input{% include "django/forms/widgets/attrs.html" %}>

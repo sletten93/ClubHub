@@ -39,7 +39,8 @@
     "Notiscenter": "Ilmoituskeskus",
     "Inga nya notiser.": "Ei uusia ilmoituksia.",
     "Meddelandecentral": "Viestikeskus",
-    "Personregister": "Henkilörekisteri"
+    "Personregister": "Henkilörekisteri",
+    "Inställningar": "Asetukset"
   },
   "Inloggning": {
     "Logga in": "Kirjaudu sisään",
@@ -200,13 +201,22 @@
     "Inställningarna har sparats.": "Asetukset on tallennettu.",
     "Knappar, länkar, badges och fokusmarkering.": "Napit, linkit, merkit ja kohdistusmerkintä.",
     "Menyraden i toppen.": "Yläreunan valikkopalkki.",
-    "Visas i menyn och på startsidan. PNG, JPG eller WebP.": "Näkyy valikossa ja etusivulla. PNG, JPG tai WebP.",
     "Används som diskret bakgrund bakom innehållet, med en ljus transparent överlägg för läsbarhet.": "Käytetään hillitynä taustana sisällön alla, vaalealla läpinäkyvällä päällysteellä luettavuuden vuoksi.",
     "Menyn till vänster.": "Vasen valikko.",
     "Är du säker på att du vill ta bort bilden?": "Haluatko varmasti poistaa kuvan?",
     "Ja": "Kyllä",
     "Nej": "Ei",
-    "Bilden kunde inte tas bort.": "Kuvan poistaminen epäonnistui."
+    "Bilden kunde inte tas bort.": "Kuvan poistaminen epäonnistui.",
+    "Visas i menyn, på startsidan och som favicon. PNG, JPG eller WebP.": "Näkyy valikossa, etusivulla ja faviconina. PNG, JPG tai WebP."
+  },
+  "Inställningar": {
+    "Konto": "Tili",
+    "Förnamn": "Etunimi",
+    "Efternamn": "Sukunimi",
+    "E-post": "Sähköposti",
+    "Språk": "Kieli",
+    "Standard": "Oletus",
+    "Inställningarna har sparats.": "Asetukset on tallennettu."
   },
   "Personregister": {
     "Personregister": "Henkilörekisteri",
@@ -242,6 +252,10 @@
     "Nr": "Nro",
     "Importera": "Tuo",
     "Importera personer": "Tuo henkilöt",
+    "Exportera": "Vie",
+    "Exportera personregister": "Vie henkilörekisteri",
+    "Välj filformat": "Valitse tiedostomuoto",
+    "Exporten använder den sökning och de filter som är aktiva just nu.": "Vienti käyttää tällä hetkellä aktiivisia haku- ja suodatusvalintoja.",
     "Varningar": "Varoitukset",
     "Målsman": "Huoltaja",
     "Adress": "Osoite",

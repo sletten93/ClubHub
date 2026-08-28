@@ -1,6 +1,9 @@
+import io
 import json
+import xml.etree.ElementTree as ET
 from datetime import date, timedelta
 
+import openpyxl
 from django.contrib import messages
 from django.db.models import (
     CharField,
@@ -11,6 +14,7 @@ from django.db.models import (
     Value,
 )
 from django.db.models.functions import Concat, Substr
+from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
@@ -39,21 +43,14 @@ PAYMENT_FILTERS = ("paid", "partly", "unpaid")
 GENDER_FILTERS = tuple(Person.Gender.values)
 AGE_FILTERS = ("over15", "under15")
 
-# Applied when the register is opened without an explicit filter
-# submission. The form posts a `filters_set` marker on every request, so
-# "unchecked" can be told apart from "never submitted". Persons with no
-# gender set match none of the gender filters.
-DEFAULT_ROLES = ("member", "trainer")
-DEFAULT_PAYMENTS = ("paid", "partly", "unpaid")
-DEFAULT_AGES = ("over15", "under15")
-DEFAULT_GENDERS = GENDER_FILTERS
 
+class PersonRegisterQuerysetMixin:
+    """Search/filter/sort logic shared by the register table and exports.
 
-class PersonRegisterView(TablePaginationMixin, AdminRequiredMixin, ListView):
-    """Person register with search, filters and sortable columns."""
-
-    template_name = "people/person_register.html"
-    context_object_name = "people"
+    Every filter is off unless the query string explicitly asks for it —
+    an absent or empty checkbox group means "no filtering", never
+    "match nothing". Persons with no gender set match no gender filter.
+    """
 
     # Whitelisted sort keys -> model fields. Names are the stable tiebreaker
     # for all other columns so equal values keep a predictable order.
@@ -68,23 +65,16 @@ class PersonRegisterView(TablePaginationMixin, AdminRequiredMixin, ListView):
     def _parse_params(self):
         params = self.request.GET
         self._search = params.get("q", "").strip()
-        if "filters_set" in params:
-            self._roles = [f for f in params.getlist("role") if f in ROLE_FILTERS]
-            self._payments = [f for f in params.getlist("payment") if f in PAYMENT_FILTERS]
-            self._ages = [f for f in params.getlist("age") if f in AGE_FILTERS]
-            self._genders = [f for f in params.getlist("gender") if f in GENDER_FILTERS]
-        else:
-            self._roles = list(DEFAULT_ROLES)
-            self._payments = list(DEFAULT_PAYMENTS)
-            self._ages = list(DEFAULT_AGES)
-            self._genders = list(DEFAULT_GENDERS)
+        self._roles = [f for f in params.getlist("role") if f in ROLE_FILTERS]
+        self._payments = [f for f in params.getlist("payment") if f in PAYMENT_FILTERS]
+        self._ages = [f for f in params.getlist("age") if f in AGE_FILTERS]
+        self._genders = [f for f in params.getlist("gender") if f in GENDER_FILTERS]
         sort = params.get("sort", "nr")
         self._sort = sort if sort in self.SORT_FIELDS else "nr"
         direction = params.get("dir", "asc")
         self._direction = direction if direction in ("asc", "desc") else "asc"
 
-    def get_queryset(self):
-        self._parse_params()
+    def build_queryset(self):
         queryset = (
             Person.objects.filter(club=services.get_person(self.request.user).club)
             .select_related("user")
@@ -200,6 +190,19 @@ class PersonRegisterView(TablePaginationMixin, AdminRequiredMixin, ListView):
             ordering.extend([F("last_name").asc(), F("first_name").asc()])
         return queryset.order_by(*ordering)
 
+
+class PersonRegisterView(
+    TablePaginationMixin, PersonRegisterQuerysetMixin, AdminRequiredMixin, ListView
+):
+    """Person register with search, filters and sortable columns."""
+
+    template_name = "people/person_register.html"
+    context_object_name = "people"
+
+    def get_queryset(self):
+        self._parse_params()
+        return self.build_queryset()
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         base_params = self.request.GET.copy()
@@ -253,6 +256,73 @@ class PersonRegisterView(TablePaginationMixin, AdminRequiredMixin, ListView):
             }
         )
         return context
+
+
+class PersonExportView(PersonRegisterQuerysetMixin, AdminRequiredMixin, View):
+    """Download the register as xlsx or xml, honouring search/filters/sort.
+
+    Column headers use the Sportadmin "Personregister" names so an export
+    can be re-imported. Pagination never applies: every matching row is
+    included regardless of the current page size.
+    """
+
+    # xlsx header, xml tag, model attribute
+    EXPORT_COLUMNS = [
+        ("MedlemsNr", "medlemsnr", "member_number"),
+        ("Förnamn", "fornamn", "first_name"),
+        ("Efternamn", "efternamn", "last_name"),
+        ("Personnummer", "personnummer", "personnummer"),
+        ("E-post", "epost", "email"),
+        ("Mobiltelefon", "mobiltelefon", "phone_mobile"),
+    ]
+
+    def get(self, request, *args, **kwargs):
+        export_format = request.GET.get("format", "xlsx")
+        if export_format not in ("xlsx", "xml"):
+            export_format = "xlsx"
+        self._parse_params()
+        persons = self.build_queryset()
+        if export_format == "xml":
+            payload = self._render_xml(persons)
+            content_type = "text/xml; charset=utf-8"
+        else:
+            payload = self._render_xlsx(persons)
+            content_type = (
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+        filename = f"personregister-{date.today().isoformat()}.{export_format}"
+        response = HttpResponse(payload, content_type=content_type)
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+    @classmethod
+    def _cell(cls, person, attr):
+        value = getattr(person, attr)
+        return "" if value is None else value
+
+    @classmethod
+    def _render_xlsx(cls, persons):
+        workbook = openpyxl.Workbook()
+        sheet = workbook.active
+        sheet.title = "Personregister"
+        sheet.append([header for header, _, _ in cls.EXPORT_COLUMNS])
+        for person in persons:
+            sheet.append(
+                [cls._cell(person, attr) for _, _, attr in cls.EXPORT_COLUMNS]
+            )
+        buffer = io.BytesIO()
+        workbook.save(buffer)
+        return buffer.getvalue()
+
+    @classmethod
+    def _render_xml(cls, persons):
+        root = ET.Element("personregister")
+        for person in persons:
+            node = ET.SubElement(root, "person")
+            for _, tag, attr in cls.EXPORT_COLUMNS:
+                ET.SubElement(node, tag).text = str(cls._cell(person, attr))
+        ET.indent(root)
+        return ET.tostring(root, encoding="UTF-8", xml_declaration=True)
 
 
 class PersonCreateView(AdminRequiredMixin, CreateView):

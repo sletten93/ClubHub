@@ -39,7 +39,8 @@
     "Notiscenter": "Alerts Center",
     "Inga nya notiser.": "No new alerts.",
     "Meddelandecentral": "Message Center",
-    "Personregister": "People register"
+    "Personregister": "People register",
+    "Inställningar": "Settings"
   },
   "Inloggning": {
     "Logga in": "Log in",
@@ -200,13 +201,22 @@
     "Inställningarna har sparats.": "The settings have been saved.",
     "Knappar, länkar, badges och fokusmarkering.": "Buttons, links, badges and focus outline.",
     "Menyraden i toppen.": "The top navigation bar.",
-    "Visas i menyn och på startsidan. PNG, JPG eller WebP.": "Shown in the menu and on the start page. PNG, JPG or WebP.",
     "Används som diskret bakgrund bakom innehållet, med en ljus transparent överlägg för läsbarhet.": "Used as a subtle background behind the content, with a light transparent overlay for readability.",
     "Menyn till vänster.": "The menu on the left.",
     "Är du säker på att du vill ta bort bilden?": "Are you sure you want to remove the image?",
     "Ja": "Yes",
     "Nej": "No",
-    "Bilden kunde inte tas bort.": "The image could not be removed."
+    "Bilden kunde inte tas bort.": "The image could not be removed.",
+    "Visas i menyn, på startsidan och som favicon. PNG, JPG eller WebP.": "Shown in the menu, on the start page and as favicon. PNG, JPG or WebP."
+  },
+  "Inställningar": {
+    "Konto": "Account",
+    "Förnamn": "First name",
+    "Efternamn": "Last name",
+    "E-post": "Email",
+    "Språk": "Language",
+    "Standard": "Default",
+    "Inställningarna har sparats.": "The settings have been saved."
   },
   "Personregister": {
     "Personregister": "People register",
@@ -242,6 +252,10 @@
     "Nr": "No",
     "Importera": "Import",
     "Importera personer": "Import people",
+    "Exportera": "Export",
+    "Exportera personregister": "Export person register",
+    "Välj filformat": "Choose file format",
+    "Exporten använder den sökning och de filter som är aktiva just nu.": "The export uses the search and filters that are currently active.",
     "Varningar": "Warnings",
     "Målsman": "Guardian",
     "Adress": "Address",

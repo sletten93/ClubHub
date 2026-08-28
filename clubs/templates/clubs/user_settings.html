@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load tr %}
+{% block title %}{% tr "Inställningar" "Nav" %}{% endblock %}
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">{% tr "Inställningar" "Nav" %}</h1>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 fw-bold text-primary">{% tr "Konto" "Inställningar" %}</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% for field in profile_form %}
+                    <div class="mb-3 ch-float{% if field.name == 'language' %} ch-float-top{% endif %}">
+                        <label class="ch-float-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary mt-2">{% tr "Spara" %}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 fw-bold text-primary">{% tr "Byt lösenord" "Konton" %}</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'clubs:user_password' %}" novalidate>
+                    {% csrf_token %}
+                    {% if password_form.non_field_errors %}<div class="text-danger small mb-2">{{ password_form.non_field_errors.0 }}</div>{% endif %}
+                    {% for field in password_form %}
+                    <div class="mb-3 ch-float">
+                        <label class="ch-float-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary mt-2">{% tr "Ändra lösenord" "Konton" %}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

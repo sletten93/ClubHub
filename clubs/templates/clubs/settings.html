@@ -49,7 +49,7 @@
                     {% if form.secondary_color.errors %}<div class="text-danger small">{{ form.secondary_color.errors.0 }}</div>{% endif %}
                 </div>
                 <div class="col-md-4">
-                    <div class="ch-box p-3" data-label="{% tr "Förhandsvisning" "Klubbinställningar" %}">
+                    <div class="ch-box ch-color-preview p-3" data-label="{% tr "Förhandsvisning" "Klubbinställningar" %}">
                         <button id="pv-solid" type="button" class="btn btn-primary btn-sm me-2 mb-2">{% tr "Spara" %}</button>
                         <button id="pv-outline" type="button" class="btn btn-outline-primary btn-sm me-2 mb-2">{% tr "Avbryt" %}</button>
                         <span id="pv-badge" class="badge bg-primary align-middle"
@@ -66,7 +66,7 @@
         </div>
         <div class="card-body">
             {{ form.logo }}
-            <small class="form-text text-muted">{% tr "Visas i menyn och på startsidan. PNG, JPG eller WebP." "Klubbinställningar" %}</small>
+            <small class="form-text text-muted">{% tr "Visas i menyn, på startsidan och som favicon. PNG, JPG eller WebP." "Klubbinställningar" %}</small>
             {% if form.logo.errors %}<div class="text-danger small mt-1">{{ form.logo.errors.0 }}</div>{% endif %}
         </div>
     </div>
@@ -161,17 +161,61 @@
         });
         updateColors();
 
+        var removeImageField = null;
+
         document.querySelectorAll("input[type=file][data-preview-input]").forEach(function (input) {
+            var row = input.closest(".ch-file-row");
+            var cardBody = input.closest(".card-body");
+            var thumbnail = cardBody ? cardBody.querySelector("[data-current-image]") : null;
+            var nameSpan = row ? row.querySelector("[data-file-name]") : null;
+            var removeButton = row ? row.querySelector("[data-remove-image]") : null;
+            var originalSrc = thumbnail ? thumbnail.src : "";
+
+            function setCancelMode(cancelMode) {
+                if (!removeButton) return;
+                removeButton.textContent = cancelMode
+                    ? removeButton.dataset.cancelLabel
+                    : removeButton.dataset.removeLabel;
+                removeButton.classList.toggle("btn-outline-danger", !cancelMode);
+                removeButton.classList.toggle("btn-outline-secondary", cancelMode);
+            }
+
+            function restoreThumbnail() {
+                if (!thumbnail) return;
+                if (thumbnail.closest("[data-current-wrapper]")) {
+                    thumbnail.src = originalSrc;
+                } else {
+                    thumbnail.src = "";
+                    thumbnail.classList.add("d-none");
+                }
+            }
+
+            function cancelSelection() {
+                input.value = "";
+                if (nameSpan) nameSpan.textContent = "";
+                restoreThumbnail();
+                setCancelMode(false);
+            }
+
+            if (removeButton) {
+                removeButton.dataset.removeLabel = removeButton.textContent;
+                removeButton.addEventListener("click", function () {
+                    if (input.files && input.files[0]) {
+                        cancelSelection();
+                        return;
+                    }
+                    removeImageField = removeButton.dataset.removeImage;
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById("removeImageModal")).show();
+                });
+            }
+
             input.addEventListener("change", function () {
-                var cardBody = input.closest(".card-body");
-                var thumbnail = cardBody ? cardBody.querySelector("[data-current-image]") : null;
-                var nameSpan = input.closest(".ch-file-row").querySelector("[data-file-name]");
                 var file = input.files && input.files[0];
                 if (nameSpan) nameSpan.textContent = file ? file.name : "";
+                setCancelMode(Boolean(file));
                 if (!thumbnail) return;
                 if (!file) {
-                    thumbnail.src = "";
-                    if (!thumbnail.closest("[data-current-wrapper]")) thumbnail.classList.add("d-none");
+                    restoreThumbnail();
                     return;
                 }
                 var reader = new FileReader();
@@ -180,14 +224,6 @@
                     thumbnail.classList.remove("d-none");
                 };
                 reader.readAsDataURL(file);
-            });
-        });
-
-        var removeImageField = null;
-        document.querySelectorAll("[data-remove-image]").forEach(function (button) {
-            button.addEventListener("click", function () {
-                removeImageField = button.dataset.removeImage;
-                bootstrap.Modal.getOrCreateInstance(document.getElementById("removeImageModal")).show();
             });
         });
 
