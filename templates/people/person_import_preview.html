@@ -34,6 +34,7 @@
                                     <th>{% tr "Kön" "Personregister" %}</th>
                                     <th>{% tr "E-post" "Personregister" %}</th>
                                     <th>{% tr "Mobiltelefon" "Personregister" %}</th>
+                                    <th>{% tr "Roll" "Personregister" %}</th>
                                     <th>{% tr "Adress" "Personregister" %}</th>
                                     <th>{% tr "Målsman" "Personregister" %}</th>
                                 </tr>
@@ -46,6 +47,7 @@
                                     <td>{{ row.gender }}</td>
                                     <td>{{ row.email }}</td>
                                     <td>{{ row.phone_mobile }}</td>
+                                    <td>{% if row.roles %}{{ row.roles|join:", " }}{% else %}<span class="text-muted">&mdash;</span>{% endif %}</td>
                                     <td>{% if row.street_address or row.postal_code or row.city %}{{ row.street_address }}, {{ row.postal_code }} {{ row.city }}{% else %}<span class="text-muted">&mdash;</span>{% endif %}</td>
                                     <td>
                                         {% for guardian in row.guardians %}

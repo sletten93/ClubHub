@@ -48,6 +48,11 @@
   },
   "Konton": {
     "Byt lösenord": "Skipta um lykilorð",
+    "Nuvarande lösenord": "Núverandi lykilorð",
+    "Nytt lösenord": "Nýtt lykilorð",
+    "Bekräfta nytt lösenord": "Staðfestu nýtt lykilorð",
+    "Minst 8 tecken, inte bara siffror och inte för likt namn eller e-post.": "Að minnsta kosti 8 stafir, ekki einungis tölustafir, og ekki of líkt nafni eða tölvupósti.",
+    "Fyll i samma lösenord som tidigare för verifiering.": "Sláðu inn sama lykilorð og áður til staðfestingar.",
     "Ändra lösenord": "Breyta lykilorði",
     "Lösenordet har ändrats.": "Lykilorðinu hefur verið breytt.",
     "Till startsidan": "Á forsíðuna",
@@ -121,7 +126,24 @@
     "Pass med registrerad närvaro och manuellt ändrade pass påverkas inte.": "Æfingatímar með skráða mætingu og handvirkt breyttir tímar verða ekki fyrir áhrifum.",
     "Mallen togs bort. Befintliga pass behålls som enskilda aktiviteter.": "Sniðmátið var eytt. Fyrirliggjandi æfingatímar halda áfram sem einstakir atburðir.",
     "Veckodag": "Vikudagur",
-    "Aktiviteten har uppdaterats. Den följer inte längre mallens återkommande schema.": "Atburðurinn hefur verið uppfærður. Hann fylgir ekki lengur endurtekinni áætlun sniðmátsins."
+    "Aktiviteten har uppdaterats. Den följer inte längre mallens återkommande schema.": "Atburðurinn hefur verið uppfærður. Hann fylgir ekki lengur endurtekinni áætlun sniðmátsins.",
+    "Grupp": "Hópur",
+    "Plats": "Staður",
+    "Måndag": "Mánudagur",
+    "Tisdag": "Þriðjudagur",
+    "Onsdag": "Miðvikudagur",
+    "Torsdag": "Fimmtudagur",
+    "Fredag": "Föstudagur",
+    "Lördag": "Laugardagur",
+    "Söndag": "Sunnudagur",
+    "Aldrig": "Aldrei",
+    "Varje dag": "Hvern dag",
+    "Vardagar": "Virkir dagar",
+    "Varje vecka": "Hverja viku",
+    "Varje månad": "Hvern mánuð",
+    "Träningspass": "Æfing",
+    "Tävling": "Mót",
+    "Möte": "Fundur"
   },
   "Närvaro": {
     "Närvarande": "Mætt(ur)",
@@ -257,6 +279,10 @@
     "Inga personer registrerade ännu.": "Engar persónur skráðar enn.",
     "Personen har skapats.": "Einstaklingur hefur verið búinn til.",
     "Personen har uppdaterats.": "Einstaklingur hefur verið uppfærður.",
-    "Personen har tagits bort.": "Einstaklingur hefur verið eytt."
+    "Personen har tagits bort.": "Einstaklingur hefur verið eytt.",
+    "Roll": "Hlutverk",
+    "Betalningsstatus": "Greiðslustaða",
+    "Filen måste vara i xlsx- eller xml-format.": "Skráin verður að vera á xlsx- eða xml-sniði.",
+    "Filen kunde inte läsas.": "Ekki tókst að lesa skrána."
   }
 }

@@ -10,6 +10,7 @@ from django.db.models import (
     Exists,
     F,
     OuterRef,
+    Prefetch,
     Q,
     Value,
 )
@@ -34,7 +35,11 @@ from people.mixins import AdminRequiredMixin
 
 from . import services
 from .forms import PersonForm
-from .sportadmin import import_person_rows, parse_sportadmin_personregister
+from .sportadmin import (
+    import_person_rows,
+    parse_personregister_xml,
+    parse_sportadmin_personregister,
+)
 from .models import GuardianRelation, Membership, Person
 
 
@@ -258,22 +263,75 @@ class PersonRegisterView(
         return context
 
 
+def _gender_text(person):
+    return person.get_gender_display() or ""
+
+
+def _roles_text(person):
+    """Comma-separated role labels matching the register table's role filter."""
+    roles = []
+    if hasattr(person, "membership"):
+        roles.append("Medlem")
+    if any(
+        gm.role == GroupMembership.Role.TRAINER
+        for gm in person.group_memberships.all()
+    ):
+        roles.append("Tränare")
+    staff = getattr(person, "staff_profile", None)
+    if staff is not None and staff.is_admin:
+        roles.append("Admin")
+    if person.guardian_of.exists():
+        roles.append("Förälder")
+    return ", ".join(roles)
+
+
+def _payment_text(person):
+    membership = getattr(person, "membership", None)
+    if membership is None:
+        return ""
+    return membership.get_payment_status_display()
+
+
+def _guardians_text(person):
+    return "; ".join(
+        f"{rel.guardian.full_name} ({rel.relation})".strip()
+        if rel.relation
+        else rel.guardian.full_name
+        for rel in person.guarded_by.all()
+    )
+
+
+def _children_text(person):
+    return "; ".join(rel.child.full_name for rel in person.guardian_of.all())
+
+
 class PersonExportView(PersonRegisterQuerysetMixin, AdminRequiredMixin, View):
     """Download the register as xlsx or xml, honouring search/filters/sort.
 
-    Column headers use the Sportadmin "Personregister" names so an export
-    can be re-imported. Pagination never applies: every matching row is
-    included regardless of the current page size.
+    Headers use Swedish names shared with the Sportadmin columns so an
+    export can be re-imported (both formats are accepted by the import).
+    Pagination never applies: every matching row is included regardless of
+    the current page size.
     """
 
-    # xlsx header, xml tag, model attribute
+    # xlsx header, xml tag, model attribute or value callable
     EXPORT_COLUMNS = [
         ("MedlemsNr", "medlemsnr", "member_number"),
         ("Förnamn", "fornamn", "first_name"),
         ("Efternamn", "efternamn", "last_name"),
         ("Personnummer", "personnummer", "personnummer"),
+        ("Kön", "kon", _gender_text),
+        ("Adress", "adress", "street_address"),
+        ("Postnummer", "postnummer", "postal_code"),
+        ("Stad", "stad", "city"),
         ("E-post", "epost", "email"),
         ("Mobiltelefon", "mobiltelefon", "phone_mobile"),
+        ("Allergi", "allergi", "allergy"),
+        ("Övrigt", "ovrigt", "notes"),
+        ("Roll", "roll", _roles_text),
+        ("Betalningsstatus", "betalningsstatus", _payment_text),
+        ("Målsman", "malsman", _guardians_text),
+        ("Vårdnadshavare till", "vardnadshavare", _children_text),
     ]
 
     def get(self, request, *args, **kwargs):
@@ -281,7 +339,18 @@ class PersonExportView(PersonRegisterQuerysetMixin, AdminRequiredMixin, View):
         if export_format not in ("xlsx", "xml"):
             export_format = "xlsx"
         self._parse_params()
-        persons = self.build_queryset()
+        persons = self.build_queryset().prefetch_related(
+            "membership",
+            "staff_profile",
+            "group_memberships",
+            Prefetch(
+                "guardian_of", queryset=GuardianRelation.objects.select_related("child")
+            ),
+            Prefetch(
+                "guarded_by",
+                queryset=GuardianRelation.objects.select_related("guardian"),
+            ),
+        )
         if export_format == "xml":
             payload = self._render_xml(persons)
             content_type = "text/xml; charset=utf-8"
@@ -296,8 +365,8 @@ class PersonExportView(PersonRegisterQuerysetMixin, AdminRequiredMixin, View):
         return response
 
     @classmethod
-    def _cell(cls, person, attr):
-        value = getattr(person, attr)
+    def _cell(cls, person, getter):
+        value = getter(person) if callable(getter) else getattr(person, getter)
         return "" if value is None else value
 
     @classmethod
@@ -405,18 +474,32 @@ class PersonImportPreviewView(AdminRequiredMixin, View):
         if upload is None:
             messages.error(request, translate("Ingen fil valdes.", "Personregister"))
             return redirect("people:register")
-        if not upload.name.lower().endswith(".xlsx"):
-            messages.error(
-                request, translate("Filen måste vara i xlsx-format.", "Personregister")
-            )
-            return redirect("people:register")
-        try:
-            rows, warnings = parse_sportadmin_personregister(upload.read())
-        except Exception:
+        name = upload.name.lower()
+        if name.endswith(".xml"):
+            try:
+                rows, warnings = parse_personregister_xml(upload.read())
+            except Exception:
+                messages.error(
+                    request,
+                    translate("Filen kunde inte läsas.", "Personregister"),
+                )
+                return redirect("people:register")
+        elif name.endswith(".xlsx"):
+            try:
+                rows, warnings = parse_sportadmin_personregister(upload.read())
+            except Exception:
+                messages.error(
+                    request,
+                    translate(
+                        "Filen kunde inte läsas som ett Excel-register.", "Personregister"
+                    ),
+                )
+                return redirect("people:register")
+        else:
             messages.error(
                 request,
                 translate(
-                    "Filen kunde inte läsas som ett Excel-register.", "Personregister"
+                    "Filen måste vara i xlsx- eller xml-format.", "Personregister"
                 ),
             )
             return redirect("people:register")

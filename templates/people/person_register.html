@@ -253,7 +253,7 @@
         var params = new URLSearchParams(window.location.search);
         params.delete('page');
         params.set('format', format);
-        window.location.href = window.location.pathname + '?' + params.toString();
+        window.location.href = '{% url "people:export" %}?' + params.toString();
         bootstrap.Modal.getOrCreateInstance(document.getElementById('export-modal')).hide();
     });
 </script>

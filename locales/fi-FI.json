@@ -50,6 +50,11 @@
   },
   "Konton": {
     "Byt lösenord": "Vaihda salasana",
+    "Nuvarande lösenord": "Nykyinen salasana",
+    "Nytt lösenord": "Uusi salasana",
+    "Bekräfta nytt lösenord": "Vahvista uusi salasana",
+    "Minst 8 tecken, inte bara siffror och inte för likt namn eller e-post.": "Vähintään 8 merkkiä, ei vain numeroita, eikä liian samankaltainen nimen tai sähköpostin kanssa.",
+    "Fyll i samma lösenord som tidigare för verifiering.": "Syötä sama salasana kuin aiemmin vahvistusta varten.",
     "Ändra lösenord": "Muuta salasanaa",
     "Lösenordet har ändrats.": "Salasana on muutettu.",
     "Till startsidan": "Etusivulle",
@@ -123,7 +128,24 @@
     "Pass med registrerad närvaro och manuellt ändrade pass påverkas inte.": "Läsnäolon sisältäviä ja käsin muokattuja harjoituksia ei muuteta.",
     "Mallen togs bort. Befintliga pass behålls som enskilda aktiviteter.": "Pohja poistettiin. Olemassa olevat harjoitukset säilytetään yksittäisinä tapahtumina.",
     "Veckodag": "Viikonpäivä",
-    "Aktiviteten har uppdaterats. Den följer inte längre mallens återkommande schema.": "Tapahtuma on päivitetty. Se ei enää noudata pohjan toistuvaa aikataulua."
+    "Aktiviteten har uppdaterats. Den följer inte längre mallens återkommande schema.": "Tapahtuma on päivitetty. Se ei enää noudata pohjan toistuvaa aikataulua.",
+    "Grupp": "Ryhmä",
+    "Plats": "Paikka",
+    "Måndag": "Maanantai",
+    "Tisdag": "Tiistai",
+    "Onsdag": "Keskiviikko",
+    "Torsdag": "Torstai",
+    "Fredag": "Perjantai",
+    "Lördag": "Lauantai",
+    "Söndag": "Sunnuntai",
+    "Aldrig": "Ei koskaan",
+    "Varje dag": "Joka päivä",
+    "Vardagar": "Arkisin",
+    "Varje vecka": "Joka viikko",
+    "Varje månad": "Joka kuukausi",
+    "Träningspass": "Harjoitus",
+    "Tävling": "Kilpailu",
+    "Möte": "Kokous"
   },
   "Närvaro": {
     "Närvarande": "Läsnä",
@@ -271,6 +293,10 @@
     "Inga personer registrerade ännu.": "Ei rekisteröityjä henkilöitä vielä.",
     "Personen har skapats.": "Henkilö on luotu.",
     "Personen har uppdaterats.": "Henkilö on päivitetty.",
-    "Personen har tagits bort.": "Henkilö on poistettu."
+    "Personen har tagits bort.": "Henkilö on poistettu.",
+    "Roll": "Rooli",
+    "Betalningsstatus": "Maksun tila",
+    "Filen måste vara i xlsx- eller xml-format.": "Tiedoston on oltava xlsx- tai xml-muodossa.",
+    "Filen kunde inte läsas.": "Tiedostoa ei voitu lukea."
   }
 }

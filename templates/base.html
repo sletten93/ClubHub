@@ -11,6 +11,14 @@
     {% endif %}
     <link href="{% static 'vendor/fontawesome-free/css/all.min.css' %}" rel="stylesheet">
     <link href="{% static 'css/clubhub.css' %}" rel="stylesheet">
+    {% comment %}
+      Loaded once here, never in <body>: hx-boost swaps <body> and re-runs its
+      scripts, and a re-executed Bootstrap bundle stacks duplicate
+      document-level handlers, making dropdowns/modals toggle open and
+      instantly closed again.
+    {% endcomment %}
+    <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'vendor/htmx/htmx.min.js' %}"></script>
     {% if theme %}
     <style>
         :root { --ch-primary: {{ theme.primary }}; }
@@ -280,9 +288,7 @@
     </div>
 </div>
 
-<script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 <script src="{% static 'js/clubhub.js' %}"></script>
-<script src="{% static 'vendor/htmx/htmx.min.js' %}"></script>
 <script>
     // The body element survives hx-boost swaps, so bind the CSRF hook once.
     if (!window.chCsrfBound) {

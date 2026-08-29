@@ -50,6 +50,11 @@
   },
   "Konton": {
     "Byt lösenord": "Change password",
+    "Nuvarande lösenord": "Current password",
+    "Nytt lösenord": "New password",
+    "Bekräfta nytt lösenord": "Confirm new password",
+    "Minst 8 tecken, inte bara siffror och inte för likt namn eller e-post.": "At least 8 characters, not only digits, and not too similar to your name or email.",
+    "Fyll i samma lösenord som tidigare för verifiering.": "Enter the same password as before, for verification.",
     "Ändra lösenord": "Change password",
     "Lösenordet har ändrats.": "Your password has been changed.",
     "Till startsidan": "To the start page",
@@ -123,7 +128,24 @@
     "Pass med registrerad närvaro och manuellt ändrade pass påverkas inte.": "Sessions with registered attendance and manually edited sessions are not affected.",
     "Mallen togs bort. Befintliga pass behålls som enskilda aktiviteter.": "The template was deleted. Existing sessions are kept as individual activities.",
     "Veckodag": "Weekday",
-    "Aktiviteten har uppdaterats. Den följer inte längre mallens återkommande schema.": "The activity has been updated. It no longer follows the template's recurring schedule."
+    "Aktiviteten har uppdaterats. Den följer inte längre mallens återkommande schema.": "The activity has been updated. It no longer follows the template's recurring schedule.",
+    "Grupp": "Group",
+    "Plats": "Location",
+    "Måndag": "Monday",
+    "Tisdag": "Tuesday",
+    "Onsdag": "Wednesday",
+    "Torsdag": "Thursday",
+    "Fredag": "Friday",
+    "Lördag": "Saturday",
+    "Söndag": "Sunday",
+    "Aldrig": "Never",
+    "Varje dag": "Every day",
+    "Vardagar": "Weekdays",
+    "Varje vecka": "Every week",
+    "Varje månad": "Every month",
+    "Träningspass": "Training session",
+    "Tävling": "Competition",
+    "Möte": "Meeting"
   },
   "Närvaro": {
     "Närvarande": "Present",
@@ -271,6 +293,10 @@
     "Inga personer registrerade ännu.": "No people registered yet.",
     "Personen har skapats.": "The person has been created.",
     "Personen har uppdaterats.": "The person has been updated.",
-    "Personen har tagits bort.": "The person has been removed."
+    "Personen har tagits bort.": "The person has been removed.",
+    "Roll": "Role",
+    "Betalningsstatus": "Payment status",
+    "Filen måste vara i xlsx- eller xml-format.": "The file must be in xlsx or xml format.",
+    "Filen kunde inte läsas.": "The file could not be read."
   }
 }

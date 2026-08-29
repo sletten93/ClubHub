@@ -15,13 +15,37 @@
             <div class="card-body">
                 <form method="post" novalidate>
                     {% csrf_token %}
+                    <div class="mb-3 ch-float">
+                        <label class="ch-float-label" for="id_username">{% tr "Användarnamn" "Konton" %}</label>
+                        <input type="text" id="id_username" class="form-control" value="{{ request.user.username }}" disabled>
+                    </div>
                     {% for field in profile_form %}
-                    <div class="mb-3 ch-float{% if field.name == 'language' %} ch-float-top{% endif %}">
+                    <div class="mb-3 ch-float">
                         <label class="ch-float-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                         {{ field }}
                         {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
                     </div>
                     {% endfor %}
+                    <button type="submit" class="btn btn-primary mt-2">{% tr "Spara" %}</button>
+                </form>
+            </div>
+        </div>
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 fw-bold text-primary">{% tr "Språk" "Inställningar" %}</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    <input type="hidden" name="form" value="language">
+                    <div class="mb-3 ch-float ch-float-top">
+                        <label class="ch-float-label" for="id_language">{% tr "Språk" "Inställningar" %}</label>
+                        <select name="language" id="id_language" class="form-select">
+                            {% for value, label in language_choices %}
+                            <option value="{{ value }}" {% if value == language %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                     <button type="submit" class="btn btn-primary mt-2">{% tr "Spara" %}</button>
                 </form>
             </div>

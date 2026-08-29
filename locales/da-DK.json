@@ -50,6 +50,11 @@
   },
   "Konton": {
     "Byt lösenord": "Skift adgangskode",
+    "Nuvarande lösenord": "Nuværende adgangskode",
+    "Nytt lösenord": "Ny adgangskode",
+    "Bekräfta nytt lösenord": "Bekræft ny adgangskode",
+    "Minst 8 tecken, inte bara siffror och inte för likt namn eller e-post.": "Mindst 8 tegn, ikke kun tal, og ikke for lig navn eller e-mail.",
+    "Fyll i samma lösenord som tidigare för verifiering.": "Indtast den samme adgangskode som før, for bekræftelse.",
     "Ändra lösenord": "Ændr adgangskode",
     "Lösenordet har ändrats.": "Adgangskoden er ændret.",
     "Till startsidan": "Til forsiden",
@@ -123,7 +128,24 @@
     "Pass med registrerad närvaro och manuellt ändrade pass påverkas inte.": "Træninger med registreret fremmøde og manuelt redigerede træninger påvirkes ikke.",
     "Mallen togs bort. Befintliga pass behålls som enskilda aktiviteter.": "Skabelonen blev slettet. Eksisterende træninger bevares som enkelte aktiviteter.",
     "Veckodag": "Ugedag",
-    "Aktiviteten har uppdaterats. Den följer inte längre mallens återkommande schema.": "Aktiviteten er opdateret. Den følger ikke længere skabelonens gentagende skema."
+    "Aktiviteten har uppdaterats. Den följer inte längre mallens återkommande schema.": "Aktiviteten er opdateret. Den følger ikke længere skabelonens gentagende skema.",
+    "Grupp": "Gruppe",
+    "Plats": "Sted",
+    "Måndag": "Mandag",
+    "Tisdag": "Tirsdag",
+    "Onsdag": "Onsdag",
+    "Torsdag": "Torsdag",
+    "Fredag": "Fredag",
+    "Lördag": "Lørdag",
+    "Söndag": "Søndag",
+    "Aldrig": "Aldrig",
+    "Varje dag": "Hver dag",
+    "Vardagar": "Hverdage",
+    "Varje vecka": "Hver uge",
+    "Varje månad": "Hver måned",
+    "Träningspass": "Træningspas",
+    "Tävling": "Konkurrence",
+    "Möte": "Møde"
   },
   "Närvaro": {
     "Närvarande": "Til stede",
@@ -271,6 +293,10 @@
     "Inga personer registrerade ännu.": "Ingen personer registreret endnu.",
     "Personen har skapats.": "Personen blev oprettet.",
     "Personen har uppdaterats.": "Personen blev opdateret.",
-    "Personen har tagits bort.": "Personen blev slettet."
+    "Personen har tagits bort.": "Personen blev slettet.",
+    "Roll": "Rolle",
+    "Betalningsstatus": "Betalingsstatus",
+    "Filen måste vara i xlsx- eller xml-format.": "Filen skal være i xlsx- eller xml-format.",
+    "Filen kunde inte läsas.": "Filen kunne ikke læses."
   }
 }

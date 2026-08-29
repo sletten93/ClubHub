@@ -1,8 +1,9 @@
 from django import forms
+from django.contrib.auth.forms import PasswordChangeForm
 
-from .form_base import TrForm, TrModelForm
-from .models import Club, UserProfile
-from .translations import LANGUAGE_NAMES, available_languages, translate
+from .form_base import TrForm, TrModelForm, TranslateLabelsMixin
+from .models import Club
+from .translations import translate
 
 
 class PrettyClearableFileInput(forms.ClearableFileInput):
@@ -80,6 +81,28 @@ class ClubSettingsForm(TrModelForm):
         return self.cleaned_data["secondary_color"].lower()
 
 
+class UserPasswordChangeForm(TranslateLabelsMixin, PasswordChangeForm):
+    """PasswordChangeForm with labels/help text routed through the i18n system;
+    validation error messages still come from Django's validators."""
+
+    label_area = "Konton"
+    labels = {
+        "old_password": "Nuvarande lösenord",
+        "new_password1": "Nytt lösenord",
+        "new_password2": "Bekräfta nytt lösenord",
+    }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["new_password1"].help_text = translate(
+            "Minst 8 tecken, inte bara siffror och inte för likt namn eller e-post.",
+            self.label_area,
+        )
+        self.fields["new_password2"].help_text = translate(
+            "Fyll i samma lösenord som tidigare för verifiering.", self.label_area
+        )
+
+
 class UserSettingsForm(TrForm):
     """Account-level settings for the signed-in user (page /settings/)."""
 
@@ -88,31 +111,20 @@ class UserSettingsForm(TrForm):
         "first_name": "Förnamn",
         "last_name": "Efternamn",
         "email": "E-post",
-        "language": "Språk",
     }
 
     first_name = forms.CharField(max_length=150, required=False)
     last_name = forms.CharField(max_length=150, required=False)
-    email = forms.EmailField(max_length=254)
-    language = forms.ChoiceField(required=False, choices=[("", "")])
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["language"].choices = [("", translate("Standard", self.label_area))] + [
-            (code, LANGUAGE_NAMES.get(code, code)) for code in available_languages()
-        ]
+    email = forms.EmailField(max_length=254, required=False)
 
     def save(self, user):
-        user.email = self.cleaned_data["email"].strip()
-        user.first_name = self.cleaned_data["first_name"].strip()
-        user.last_name = self.cleaned_data["last_name"].strip()
+        # Current values are shown as placeholders, so empty fields mean "keep".
+        user.email = self.cleaned_data.get("email", "").strip() or user.email
+        user.first_name = self.cleaned_data.get("first_name", "").strip() or user.first_name
+        user.last_name = self.cleaned_data.get("last_name", "").strip() or user.last_name
         user.save(update_fields=["email", "first_name", "last_name"])
-        profile, _ = UserProfile.objects.get_or_create(user=user)
-        profile.language = self.cleaned_data["language"]
-        profile.save()
-        # Keep the club register (and thereby notifications) on the same address.
         person = getattr(user, "person", None)
         if person is not None and person.email != user.email:
             person.email = user.email
             person.save(update_fields=["email", "updated_at"])
-        return profile
+        return user

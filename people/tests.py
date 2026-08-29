@@ -17,7 +17,11 @@ from groups.models import Group, GroupMembership
 from . import services
 from .models import GuardianRelation, Membership, Person, StaffProfile
 from .personnummer import _luhn, birth_date_from_personnummer
-from .sportadmin import import_person_rows, parse_sportadmin_personregister
+from .sportadmin import (
+    import_person_rows,
+    parse_personregister_xml,
+    parse_sportadmin_personregister,
+)
 
 
 def complete_pnr(nine_digits):
@@ -260,6 +264,155 @@ class SportadminImportTests(TestCase):
         }]
         created, skipped = import_person_rows(self.club, rows)
         self.assertEqual((created, skipped), (0, 1))
+
+
+def _build_clubhub_xlsx(data_rows):
+    """Build an in-memory xlsx with the ClubHub export layout."""
+    headers = [
+        "MedlemsNr", "Förnamn", "Efternamn", "Personnummer", "Kön",
+        "Adress", "Postnummer", "Stad", "E-post", "Mobiltelefon",
+        "Allergi", "Övrigt", "Roll", "Betalningsstatus", "Målsman",
+        "Vårdnadshavare till",
+    ]
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = "Personregister"
+    sheet.append(headers)
+    for row in data_rows:
+        sheet.append(row)
+    buffer = io.BytesIO()
+    workbook.save(buffer)
+    return buffer.getvalue()
+
+
+class ClubHubImportTests(TestCase):
+    def setUp(self):
+        self.club = Club.objects.create(name="Roundtrip BK", slug="roundtripbk")
+
+    def test_parse_clubhub_xlsx(self):
+        content = _build_clubhub_xlsx([[
+            "0007", "Kid", "Small", "20041003****", "Kvinna", "Gatan 1",
+            "80321", "Gävle", "kid@example.com", "0737461137", "Päron",
+            "anteckning", "Medlem, Förälder", "Delvis betald",
+            "Mamma Pappa (Mamma); Pappa Papa", "Small Kid",
+        ]])
+        rows, warnings = parse_sportadmin_personregister(content)
+        self.assertEqual(warnings, [])
+        self.assertEqual(len(rows), 1)
+        row = rows[0]
+        self.assertEqual(row["first_name"], "Kid")
+        self.assertEqual(row["personnummer"], "20041003****")
+        self.assertEqual(row["gender"], Person.Gender.FEMALE)
+        self.assertEqual(row["city"], "Gävle")
+        self.assertEqual(row["allergy"], "Päron")
+        self.assertEqual(row["notes"], "anteckning")
+        self.assertEqual(row["roles"], ["Medlem", "Förälder"])
+        self.assertEqual(row["payment_status"], "Delvis betald")
+        self.assertEqual(
+            row["guardians"],
+            [
+                {"name": "Mamma Pappa", "relation": "Mamma", "email": "", "phone": ""},
+                {"name": "Pappa Papa", "relation": "", "email": "", "phone": ""},
+            ],
+        )
+        self.assertEqual(row["children"], ["Small Kid"])
+
+    def test_parse_clubhub_xml(self):
+        xml = """<?xml version='1.0' encoding='UTF-8'?>
+<personregister>
+  <person>
+    <fornamn>Kid</fornamn>
+    <efternamn>Small</efternamn>
+    <personnummer>20041003****</personnummer>
+    <kon>Kvinna</kon>
+    <epost>kid@example.com</epost>
+    <roll>Medlem</roll>
+    <betalningsstatus>Betald</betalningsstatus>
+    <malsman>Mamma Pappa (Mamma)</malsman>
+  </person>
+  <person>
+    <fornamn>Mamma</fornamn>
+    <efternamn>Pappa</efternamn>
+    <epost>mamma@example.com</epost>
+    <roll>Förälder</roll>
+    <vardnadshavare>Kid Small</vardnadshavare>
+  </person>
+</personregister>"""
+        rows, warnings = parse_personregister_xml(xml)
+        self.assertEqual(warnings, [])
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0]["roles"], ["Medlem"])
+        self.assertEqual(rows[0]["payment_status"], "Betald")
+        self.assertEqual(rows[0]["guardians"][0]["name"], "Mamma Pappa")
+        self.assertEqual(rows[0]["guardians"][0]["relation"], "Mamma")
+        self.assertEqual(rows[1]["roles"], ["Förälder"])
+        self.assertEqual(rows[1]["children"], ["Kid Small"])
+
+        created, skipped = import_person_rows(self.club, rows)
+        self.assertEqual((created, skipped), (1, 1))
+        kid = Person.objects.get(first_name="Kid")
+        self.assertTrue(Membership.objects.filter(person=kid).exists())
+        self.assertEqual(
+            kid.membership.payment_status, Membership.PaymentStatus.PAID
+        )
+        relation = GuardianRelation.objects.get(child=kid)
+        self.assertEqual(relation.relation, "Mamma")
+        self.assertEqual(relation.guardian.email, "mamma@example.com")
+
+    def test_import_clubhub_roles(self):
+        rows = [{
+            "first_name": "Erik",
+            "last_name": "Expert",
+            "personnummer": None,
+            "gender": "",
+            "street_address": "",
+            "postal_code": "",
+            "city": "",
+            "email": "erik@example.com",
+            "phone_mobile": "",
+            "notes": "",
+            "allergy": "",
+            "start_date": "",
+            "payment_status": "Obetald",
+            "roles": ["Medlem", "Tränare", "Admin"],
+            "guardians": [],
+            "children": ["Kid Small"],
+        }]
+        created, skipped = import_person_rows(self.club, rows)
+        self.assertEqual((created, skipped), (1, 0))
+        person = Person.objects.get(email="erik@example.com")
+        membership = Membership.objects.get(person=person)
+        self.assertEqual(membership.payment_status, Membership.PaymentStatus.UNPAID)
+        profile = StaffProfile.objects.get(person=person)
+        self.assertTrue(profile.is_admin)
+        child = Person.objects.get(first_name="Kid")
+        self.assertTrue(
+            GuardianRelation.objects.filter(guardian=person, child=child).exists()
+        )
+
+    def test_import_without_member_role_creates_no_membership(self):
+        rows = [{
+            "first_name": "Bara",
+            "last_name": "Förälder",
+            "personnummer": None,
+            "gender": "",
+            "street_address": "",
+            "postal_code": "",
+            "city": "",
+            "email": "",
+            "phone_mobile": "",
+            "notes": "",
+            "allergy": "",
+            "start_date": "",
+            "payment_status": "",
+            "roles": ["Förälder"],
+            "guardians": [],
+            "children": [],
+        }]
+        import_person_rows(self.club, rows)
+        person = Person.objects.get(first_name="Bara")
+        self.assertFalse(Membership.objects.filter(person=person).exists())
+        self.assertFalse(StaffProfile.objects.filter(person=person).exists())
 
 
 class MembershipGuardianRuleTests(TestCase):
@@ -724,7 +877,12 @@ class PersonExportViewTests(TestCase):
         rows = list(sheet.iter_rows(values_only=True))
         self.assertEqual(
             list(rows[0]),
-            ["MedlemsNr", "Förnamn", "Efternamn", "Personnummer", "E-post", "Mobiltelefon"],
+            [
+                "MedlemsNr", "Förnamn", "Efternamn", "Personnummer", "Kön",
+                "Adress", "Postnummer", "Stad", "E-post", "Mobiltelefon",
+                "Allergi", "Övrigt", "Roll", "Betalningsstatus", "Målsman",
+                "Vårdnadshavare till",
+            ],
         )
         # Header plus every person in the club, admin included, in
         # member-number order.
@@ -732,7 +890,55 @@ class PersonExportViewTests(TestCase):
         self.assertEqual(rows[1][1:3], ("Anna", "Admin"))
         self.assertEqual(rows[2][1:3], ("Bengt", "Berg"))
         self.assertEqual(rows[2][3], "20" + berg_pnr)
-        self.assertEqual(rows[2][4], "berg@example.com")
+        self.assertEqual(rows[2][8], "berg@example.com")
+        self.assertEqual(rows[2][9], "0701234567")
+
+    def test_xlsx_export_computed_columns_and_roundtrip(self):
+        kid = self.make_person(
+            "Kid", "Small", gender=Person.Gender.FEMALE, allergy="Päron"
+        )
+        guardian = self.make_person("Mamma", "Pappa", email="mamma@example.com")
+        GuardianRelation.objects.create(
+            guardian=guardian, child=kid, relation="Mamma"
+        )
+        Membership.objects.create(
+            person=kid,
+            start_date=date(2026, 1, 1),
+            payment_status=Membership.PaymentStatus.PAID,
+        )
+        group = Group.objects.create(club=self.club, name="Tävlingsgrupp")
+        GroupMembership.objects.create(
+            person=kid, group=group, role=GroupMembership.Role.TRAINER
+        )
+
+        response = self.client.get(self.url, {"format": "xlsx"})
+        workbook = openpyxl.load_workbook(io.BytesIO(response.content))
+        rows = list(workbook.active.iter_rows(values_only=True))
+        by_name = {row[1] + " " + row[2]: row for row in rows[1:]}
+        self.assertEqual(by_name["Kid Small"][12], "Medlem, Tränare")
+        self.assertEqual(by_name["Kid Small"][13], "Betald")
+        self.assertEqual(by_name["Kid Small"][14], "Mamma Pappa (Mamma)")
+        self.assertEqual(by_name["Kid Small"][10], "Päron")
+        self.assertEqual(by_name["Mamma Pappa"][12], "Förälder")
+        self.assertEqual(by_name["Mamma Pappa"][15], "Kid Small")
+
+        # The export re-imports cleanly into a fresh club. The guardian is
+        # created from the child's "Målsman" text, so her own row matches it
+        # by name and is merged (email backfilled) rather than duplicated.
+        other = Club.objects.create(name="Other BK", slug="otherbk")
+        parsed, _ = parse_sportadmin_personregister(response.content)
+        created, skipped = import_person_rows(other, parsed)
+        self.assertEqual((created, skipped), (2, 1))
+        self.assertEqual(
+            Person.objects.filter(club=other).count(), 3
+        )
+        new_kid = Person.objects.get(club=other, first_name="Kid")
+        self.assertEqual(new_kid.allergy, "Päron")
+        self.assertEqual(new_kid.gender, Person.Gender.FEMALE)
+        self.assertEqual(new_kid.membership.payment_status, Membership.PaymentStatus.PAID)
+        self.assertTrue(StaffProfile.objects.filter(person=new_kid).exists())
+        relation = GuardianRelation.objects.get(child=new_kid)
+        self.assertEqual(relation.relation, "Mamma")
 
     def test_xml_export_is_valid_and_nested(self):
         self.make_person("Bengt", "Berg", email="berg@example.com")

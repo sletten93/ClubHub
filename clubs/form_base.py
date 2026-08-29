@@ -12,6 +12,12 @@ class TranslateLabelsMixin:
         for name, key in self.labels.items():
             if name in self.fields:
                 self.fields[name].label = translate(key, self.label_area)
+        for field in self.fields.values():
+            if getattr(field, "choices", None):
+                field.choices = [
+                    (value, translate(label, self.label_area))
+                    for value, label in field.choices
+                ]
 
 
 class TrForm(TranslateLabelsMixin, forms.Form):

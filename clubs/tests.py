@@ -251,10 +251,15 @@ class UserSettingsTests(TestCase):
 
     def test_settings_page_renders(self):
         self.client.force_login(self.admin_user)
+        self.admin_user.first_name = "Anna"
+        self.admin_user.save()
         response = self.client.get(reverse("clubs:user_settings"))
         self.assertContains(response, 'action="/settings/password/"')
         self.assertContains(response, 'type="password"')
         self.assertContains(response, "Språk")
+        self.assertContains(response, 'placeholder="Anna"')
+        self.assertContains(response, "Nuvarande lösenord")
+        self.assertContains(response, "Minst 8 tecken")
 
     def test_update_profile_fields_and_language(self):
         self.client.force_login(self.admin_user)
@@ -264,8 +269,13 @@ class UserSettingsTests(TestCase):
                 "first_name": "Anna",
                 "last_name": "Andersson",
                 "email": "anna@example.com",
-                "language": "en-GB",
             },
+            follow=True,
+        )
+        # Language lives in its own form on the page.
+        response = self.client.post(
+            reverse("clubs:user_settings"),
+            {"form": "language", "language": "en-GB"},
             follow=True,
         )
         self.admin_user.refresh_from_db()
@@ -278,19 +288,26 @@ class UserSettingsTests(TestCase):
         self.assertContains(response, "Account")
         self.assertContains(response, "Language")
 
+    def test_blank_profile_fields_keep_current_values(self):
+        self.client.force_login(self.admin_user)
+        self.admin_user.first_name = "Anna"
+        self.admin_user.email = "anna@example.com"
+        self.admin_user.save()
+        self.client.post(reverse("clubs:user_settings"), {"email": ""})
+        self.admin_user.refresh_from_db()
+        self.assertEqual(self.admin_user.first_name, "Anna")
+        self.assertEqual(self.admin_user.email, "anna@example.com")
+
     def test_invalid_language_falls_back_to_default(self):
         self.client.force_login(self.admin_user)
-        self.client.post(
+        response = self.client.post(
             reverse("clubs:user_settings"),
-            {
-                "first_name": "Anna",
-                "last_name": "Andersson",
-                "email": "anna@example.com",
-                "language": "not-a-language",
-            },
+            {"form": "language", "language": "not-a-language"},
+            follow=True,
         )
-        response = self.client.get(reverse("clubs:user_settings"))
-        # ChoiceField rejects the value; the form re-renders with an error.
+        # Unknown codes are ignored: nothing is saved, no flash message.
+        self.admin_user.refresh_from_db()
+        self.assertEqual(self.admin_user.profile.language, "")
         self.assertNotContains(response, "sparats")
 
     def test_password_change_and_old_url_redirect(self):

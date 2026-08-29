@@ -1,16 +1,26 @@
-"""Import of Sportadmin "Personregister" Excel exports.
+"""Import of Sportadmin and ClubHub "Personregister" exports.
 
-The export is one sheet with a header row. Column names repeat ("E-post",
-"Telefon", "Relation" appear both at top level and inside the two guardian
-blocks), so columns are resolved positionally while walking the header list.
+Two xlsx layouts are accepted:
 
-Guardians ("Målsman 1/2") are denormalized strings, not person rows. They are
-imported as Person rows without personnummer, matched on email (when present)
-or exact full name, and linked through GuardianRelation with the free-form
+* The Sportadmin export: one sheet with a header row whose column names
+  repeat ("E-post", "Telefon", "Relation" appear both at top level and
+  inside the two guardian blocks), resolved positionally while walking the
+  header list.
+* The ClubHub export (see people.views.PersonExportView): the same sheet
+  with unique Swedish headers plus extra columns ("Roll",
+  "Betalningsstatus", "Målsman", "Vårdnadshavare till") resolved by name.
+
+The ClubHub XML export is accepted as well, mapped through the same
+column set by tag name.
+
+Guardians are denormalized strings, not person rows. They are imported as
+Person rows without personnummer, matched on email (when present) or
+exact full name, and linked through GuardianRelation with the free-form
 relation text kept verbatim.
 """
 
 import re
+import xml.etree.ElementTree as ET
 from datetime import date, datetime
 
 from django.core.exceptions import ValidationError
@@ -18,7 +28,7 @@ from django.core.validators import EmailValidator
 
 from clubs.translations import translate
 
-from .models import GuardianRelation, Membership, Person
+from .models import GuardianRelation, Membership, Person, StaffProfile
 from .personnummer import normalize_personnummer
 
 AREA = "Personregister"
@@ -56,7 +66,61 @@ _COLUMN_ROLES = [
     ("Allergi", "allergy"),
 ]
 
-_GENDER_MAP = {"man": Person.Gender.MALE, "kvinna": Person.Gender.FEMALE}
+_GENDER_MAP = {
+    "man": Person.Gender.MALE,
+    "kvinna": Person.Gender.FEMALE,
+    "icke-binär": Person.Gender.NON_BINARY,
+}
+
+# ClubHub xlsx header -> row field. Headers are unique in that layout, so a
+# plain name lookup works (unlike the Sportadmin layout above).
+_CLUBHUB_COLUMNS = {
+    "MedlemsNr": None,
+    "Förnamn": "first_name",
+    "Efternamn": "last_name",
+    "Personnummer": "personnummer",
+    "Kön": "gender",
+    "Adress": "street_address",
+    "Postnummer": "postal_code",
+    "Stad": "city",
+    "E-post": "email",
+    "Mobiltelefon": "phone_mobile",
+    "Allergi": "allergy",
+    "Övrigt": "notes",
+    "Roll": "roles",
+    "Betalningsstatus": "payment_status",
+    "Målsman": "guardians",
+    "Vårdnadshavare till": "children",
+}
+
+# ClubHub xml tag -> xlsx header.
+_CLUBHUB_XML_TAGS = {
+    "medlemsnr": "MedlemsNr",
+    "fornamn": "Förnamn",
+    "efternamn": "Efternamn",
+    "personnummer": "Personnummer",
+    "kon": "Kön",
+    "adress": "Adress",
+    "postnummer": "Postnummer",
+    "stad": "Stad",
+    "epost": "E-post",
+    "mobiltelefon": "Mobiltelefon",
+    "allergi": "Allergi",
+    "ovrigt": "Övrigt",
+    "roll": "Roll",
+    "betalningsstatus": "Betalningsstatus",
+    "malsman": "Målsman",
+    "vardnadshavare": "Vårdnadshavare till",
+}
+
+_PAYMENT_STATUS_MAP = {
+    "betald": Membership.PaymentStatus.PAID,
+    "delvis betald": Membership.PaymentStatus.PARTLY_PAID,
+    "obetald": Membership.PaymentStatus.UNPAID,
+}
+
+# "Medlem, Tränare" (xlsx) or "Medlem; Tränare" (xml) -> canonical labels.
+_ROLE_PATTERN = re.compile(r"[,;]")
 
 _email_validator = EmailValidator()
 _whitespace = re.compile(r"\s+")
@@ -95,11 +159,90 @@ def _valid_email(value):
     return text
 
 
+def _split_names(text):
+    """Split "Anna Andersson (Mamma); Bo Berg" into (name, relation) pairs."""
+    entries = []
+    for part in re.split(r"[;]", _clean(text)):
+        part = part.strip()
+        if not part:
+            continue
+        match = re.match(r"^(.*?)\s*\((.*?)\)\s*$", part)
+        if match:
+            entries.append((match.group(1).strip(), match.group(2).strip()))
+        else:
+            entries.append((part, ""))
+    return entries
+
+
+_ROLE_MAP = {
+    "medlem": "Medlem",
+    "tränare": "Tränare",
+    "admin": "Admin",
+    "förälder": "Förälder",
+}
+
+
+def _clubhub_row(fields, line_number):
+    """Build an import row dict from a {row_field: raw value} mapping.
+
+    Returns ``None`` for rows without any name. Warnings are embedded in
+    the row (same schema as the Sportadmin parser).
+    """
+    first_name = _clean(fields.get("first_name"))
+    last_name = _clean(fields.get("last_name"))
+    if not first_name and not last_name:
+        return None
+
+    row_warnings = []
+    raw_pnr = _clean(fields.get("personnummer")).replace(" ", "")
+    personnummer = None
+    if raw_pnr:
+        try:
+            personnummer = normalize_personnummer(raw_pnr)
+        except ValidationError:
+            row_warnings.append(translate("Ogiltigt personnummer hoppas över.", AREA))
+
+    email = _valid_email(fields.get("email"))
+    if _clean(fields.get("email")) and not email:
+        row_warnings.append(translate("Ogiltig e-postadress hoppas över.", AREA))
+
+    roles = []
+    for part in _ROLE_PATTERN.split(_clean(fields.get("roles"))):
+        role = _ROLE_MAP.get(part.strip().lower())
+        if role:
+            roles.append(role)
+
+    return {
+        "first_name": first_name,
+        "last_name": last_name,
+        "personnummer": personnummer,
+        "gender": _GENDER_MAP.get(_clean(fields.get("gender")).lower(), ""),
+        "street_address": _clean(fields.get("street_address")),
+        "postal_code": _clean(fields.get("postal_code")),
+        "city": _clean(fields.get("city")),
+        "email": email,
+        "phone_mobile": _clean(fields.get("phone_mobile")),
+        "notes": _clean(fields.get("notes")),
+        "allergy": _clean(fields.get("allergy")),
+        "start_date": "",
+        "payment_status": _clean(fields.get("payment_status")),
+        "roles": roles,
+        "guardians": [
+            {"name": name, "relation": relation, "email": "", "phone": ""}
+            for name, relation in _split_names(fields.get("guardians"))
+        ],
+        "children": [name for name, _ in _split_names(fields.get("children"))],
+        "warnings": row_warnings,
+    }
+
+
 def parse_sportadmin_personregister(data):
     """Parse an xlsx byte stream into ``(rows, warnings)``.
 
-    Each row is a JSON-serializable dict with the Person fields plus a
-    ``guardians`` list of ``{name, relation, email, phone}`` dicts. Rows that
+    Accepts both the Sportadmin export and the ClubHub export (detected by
+    the "Roll"/"Betalningsstatus" headers). Each row is a JSON-serializable
+    dict with the Person fields plus ``guardians``/``children`` lists and,
+    for the ClubHub layout, ``roles`` and ``payment_status``. Rows that
     cannot be fully mapped still come through (with empty fields); problems
     are reported per row in ``warnings`` as translated strings.
     """
@@ -114,6 +257,29 @@ def parse_sportadmin_personregister(data):
         header = next(excel_rows)
     except StopIteration:
         return [], []
+
+    header_names = [_clean(cell) for cell in header]
+
+    if "Roll" in header_names or "Betalningsstatus" in header_names:
+        # ClubHub layout: unique headers, resolved by name.
+        column_fields = [_CLUBHUB_COLUMNS.get(name) for name in header_names]
+        rows, warnings = [], []
+        for line_number, row in enumerate(excel_rows, start=2):
+            if row is None or not any(_clean(cell) for cell in row):
+                continue
+            fields = {}
+            for index, field in enumerate(column_fields):
+                if field:
+                    fields[field] = row[index] if index < len(row) else None
+            parsed = _clubhub_row(fields, line_number)
+            if parsed is None:
+                continue
+            rows.append(parsed)
+            for warning in parsed["warnings"]:
+                warnings.append(
+                    f"{parsed['first_name']} {parsed['last_name']} (rad {line_number}): {warning}"
+                )
+        return rows, warnings
 
     # Resolve roles positionally: walk the header and consume expected columns
     # in order. Column names repeat ("E-post", "Relation", ...), so a pure
@@ -194,13 +360,47 @@ def parse_sportadmin_personregister(data):
                 "start_date": (_parse_date(value_of(row, "start_date")) or "").isoformat()
                 if _parse_date(value_of(row, "start_date"))
                 else "",
+                "payment_status": "",
+                "roles": [],
                 "guardians": guardians,
+                "children": [],
                 "warnings": row_warnings,
             }
         )
         for warning in row_warnings:
             warnings.append(f"{first_name} {last_name} (rad {line_number}): {warning}")
 
+    return rows, warnings
+
+
+def parse_personregister_xml(data):
+    """Parse a ClubHub xml export into ``(rows, warnings)``.
+
+    Accepts a byte stream or string; raises ``ET.ParseError`` on malformed
+    xml (the caller reports a friendly error).
+    """
+    if isinstance(data, bytes):
+        text = data.decode("utf-8", errors="replace")
+    else:
+        text = data
+    root = ET.fromstring(text)
+    rows, warnings = [], []
+    for line_number, node in enumerate(root.iter("person"), start=2):
+        fields = {}
+        for child in node:
+            header = _CLUBHUB_XML_TAGS.get(child.tag)
+            if header is not None:
+                field = _CLUBHUB_COLUMNS[header]
+                if field:
+                    fields[field] = child.text
+        parsed = _clubhub_row(fields, line_number)
+        if parsed is None:
+            continue
+        rows.append(parsed)
+        for warning in parsed["warnings"]:
+            warnings.append(
+                f"{parsed['first_name']} {parsed['last_name']} (rad {line_number}): {warning}"
+            )
     return rows, warnings
 
 
@@ -214,16 +414,52 @@ def _find_existing(club, data):
         first_name=data["first_name"], last_name=data["last_name"]
     )
     if data["email"]:
-        return name_match.filter(email=data["email"]).first()
+        match = name_match.filter(email=data["email"]).first()
+        if match is not None:
+            return match
+        # Guardians created from denormalized text have no email; a later
+        # full row for the same person should still match them.
+        return name_match.filter(email="").first()
     return name_match.filter(email="").first()
 
 
+def _find_or_create_named_person(club, name, email="", phone=""):
+    """Match a denormalized name ("Förnamn Efternamn") to a Person, or create one."""
+    name_parts = name.split(" ", 1)
+    first_name = name_parts[0]
+    last_name = name_parts[1] if len(name_parts) > 1 else ""
+    email = _valid_email(email)
+    if email:
+        person = Person.objects.filter(club=club, email=email).first()
+        if person is not None:
+            return person
+    query = Person.objects.filter(club=club, first_name=first_name, last_name=last_name)
+    if email:
+        person = query.filter(email="").first()
+    else:
+        person = query.filter(personnummer__isnull=True).first() or query.first()
+    if person is None:
+        person = Person.objects.create(
+            club=club,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            phone_mobile=_clean(phone),
+        )
+    elif email and not person.email:
+        person.email = email
+        person.save()
+    return person
+
+
 def import_person_rows(club, rows):
-    """Create Person/GuardianRelation/Membership records from parsed rows.
+    """Create Person/GuardianRelation/Membership/StaffProfile records from parsed rows.
 
     Returns ``(created, skipped)`` counts. Rows matching an existing person
     (full/masked personnummer, or name+email for pnr-less rows) are skipped,
-    making re-imports safe.
+    making re-imports safe. ClubHub-export rows additionally restore roles
+    (membership, trainer/admin staff profile), payment status and the
+    guardian-of relation ("Vårdnadshavare till").
     """
     created = skipped = 0
     for data in rows:
@@ -235,6 +471,11 @@ def import_person_rows(club, rows):
                 data["personnummer"] = None
         existing = _find_existing(club, data)
         if existing is not None:
+            # A guardian created from denormalized text may be matched by a
+            # full row carrying the missing email — backfill it.
+            if data.get("email") and not existing.email:
+                existing.email = data["email"]
+                existing.save()
             skipped += 1
             continue
 
@@ -254,50 +495,46 @@ def import_person_rows(club, rows):
         )
 
         for guardian_data in data.get("guardians", []):
-            name_parts = guardian_data["name"].split(" ", 1)
-            guardian_first = name_parts[0]
-            guardian_last = name_parts[1] if len(name_parts) > 1 else ""
-            guardian_email = _valid_email(guardian_data.get("email", ""))
-            guardian = None
-            if guardian_email:
-                guardian = Person.objects.filter(
-                    club=club, email=guardian_email
-                ).first()
-            if guardian is None:
-                guardian_query = Person.objects.filter(
-                    club=club,
-                    first_name=guardian_first,
-                    last_name=guardian_last,
-                )
-                if guardian_email:
-                    guardian = guardian_query.filter(email="").first()
-                else:
-                    guardian = (
-                        guardian_query.filter(personnummer__isnull=True).first()
-                        or guardian_query.first()
-                    )
-            if guardian is None:
-                guardian = Person.objects.create(
-                    club=club,
-                    first_name=guardian_first,
-                    last_name=guardian_last,
-                    email=guardian_email,
-                    phone_mobile=_clean(guardian_data.get("phone", "")),
-                )
-            elif guardian_email and not guardian.email:
-                guardian.email = guardian_email
-                guardian.save()
+            guardian = _find_or_create_named_person(
+                club,
+                guardian_data["name"],
+                email=guardian_data.get("email", ""),
+                phone=guardian_data.get("phone", ""),
+            )
             GuardianRelation.objects.get_or_create(
                 guardian=guardian,
                 child=person,
                 defaults={"relation": _clean(guardian_data.get("relation", ""))},
             )
 
+        # "Vårdnadshavare till" from a ClubHub export: this person is the
+        # guardian of the named children.
+        for child_name in data.get("children", []):
+            child = _find_or_create_named_person(club, child_name)
+            GuardianRelation.objects.get_or_create(
+                guardian=person, child=child, defaults={"relation": ""}
+            )
+
+        roles = data.get("roles") or []
         start_date = data.get("start_date")
-        if start_date:
+        if "Medlem" in roles or start_date:
+            payment = _PAYMENT_STATUS_MAP.get(
+                _clean(data.get("payment_status")).lower(), ""
+            )
             Membership.objects.get_or_create(
                 person=person,
-                defaults={"status": Membership.Status.ACTIVE, "start_date": start_date},
+                defaults={
+                    "status": Membership.Status.ACTIVE,
+                    "start_date": start_date or date.today(),
+                    "payment_status": payment or Membership.PaymentStatus.UNPAID,
+                },
             )
+
+        if "Tränare" in roles or "Admin" in roles:
+            profile, _ = StaffProfile.objects.get_or_create(person=person)
+            if "Admin" in roles and not profile.is_admin:
+                profile.is_admin = True
+                profile.save()
+
         created += 1
     return created, skipped
