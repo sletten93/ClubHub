@@ -283,6 +283,13 @@
     "Roll": "Hlutverk",
     "Betalningsstatus": "Greiðslustaða",
     "Filen måste vara i xlsx- eller xml-format.": "Skráin verður að vera á xlsx- eða xml-sniði.",
-    "Filen kunde inte läsas.": "Ekki tókst að lesa skrána."
+    "Filen kunde inte läsas.": "Ekki tókst að lesa skrána.",
+    "Admin": "Admin",
+    "Ålder": "Aldur",
+    "Medlemstyp": "Meðlimategund",
+    "Välj alla": "Velja allt",
+    "Inga personer valdes för import.": "Engir aðilar voru valdir til innflutnings.",
+    "{selected} av {total} valda": "{selected} af {total} valdir",
+    "Inga personer matchar filtret.": "Engir aðilar svara síunni."
   }
 }

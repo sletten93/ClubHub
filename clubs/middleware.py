@@ -21,6 +21,30 @@ class CurrentRequestMiddleware:
             translations.current_request.reset(token)
 
 
+class MediaNoCacheMiddleware:
+    """DEBUG-only `Cache-Control: no-cache` on /media/ responses.
+
+    Media is served by django.views.static.serve with just Last-Modified,
+    so browsers heuristically cache uploads and a plain reload can show a
+    stale club logo/background after re-uploading. no-cache keeps the 304
+    revalidation but never serves from the heuristic-fresh window. Static
+    files have the same problem but are preempted by runserver's
+    StaticFilesHandler before any middleware runs — the runserver command
+    override in clubs/management/commands/ handles that one instead.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        if settings.DEBUG and request.path.startswith(
+            "/" + settings.MEDIA_URL.lstrip("/")
+        ):
+            response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
 class HtmxAuthRedirectMiddleware:
     """Turns auth redirects into full-page navigations for hx-boost requests.
 

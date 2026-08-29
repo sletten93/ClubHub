@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.conf import settings
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
@@ -16,9 +17,11 @@ MAX_RANGE_DAYS = 366
 
 # All endpoints are anonymous, shared, slow-moving data — safe to cache per
 # URL (incl. query string) for a minute. Errors are raised, so they are never
-# cached. Swap the default LocMem cache for Redis/Memcached when deploying
-# multi-process.
-API_CACHE_SECONDS = 60
+# cached. In DEBUG the timeout is 0: cache_page still stamps responses with
+# Cache-Control: max-age=0 (browsers refetch) and skips the store, so edits
+# show up instantly while developing. Swap the default LocMem cache for
+# Redis/Memcached when deploying multi-process.
+API_CACHE_SECONDS = 0 if settings.DEBUG else 60
 
 
 def _get_club(slug):

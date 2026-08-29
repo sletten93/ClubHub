@@ -163,6 +163,15 @@ clubhub/
     self-hosted (no font CDN in templates). The public `api/` endpoints are
     `cache_page(60)`-cached and the club theme dict is cached per club
     (`clubs/utils.get_theme`, invalidated by the Club `post_save` signal).
+    **In DEBUG all caching is disabled** so plain reloads pick up every change:
+    `CACHES` switches to `DummyCache` and the API timeout drops to 0 (in
+    `api/views.py`); the `runserver` override
+    (`clubs/management/commands/runserver.py`) stamps `Cache-Control: no-cache`
+    on static files (runserver's StaticFilesHandler preempts all middleware, so
+    it can't be done from middleware) and `clubs.middleware.MediaNoCacheMiddleware`
+    does the same for `/media/` — unchanged files still get 304s. `clubs` must
+    stay listed before `django.contrib.staticfiles` in INSTALLED_APPS or the
+    staticfiles built-in `runserver` command wins discovery instead.
 12. **hx-boost navigation**: `base.html` sets `hx-boost="true"`, so every link/form
     in the app shell swaps `<body>` via XHR with pushState. Consequences: scripts
     inside `<body>` are **re-executed on every navigation** — they must be idempotent

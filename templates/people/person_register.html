@@ -7,7 +7,7 @@
     <div class="d-flex">
         <form method="post" action="{% url 'people:import_preview' %}" enctype="multipart/form-data" class="me-2 mb-0" id="import-form">
             {% csrf_token %}
-            <input type="file" name="file" id="import-file-input" accept=".xlsx"
+            <input type="file" name="file" id="import-file-input" accept=".xlsx,.xml"
                    style="display:none;" />
             <button type="button" class="btn btn-sm btn-secondary shadow-sm"
                     onclick="document.getElementById('import-file-input').click();">

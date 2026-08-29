@@ -297,6 +297,13 @@
     "Roll": "Roll",
     "Betalningsstatus": "Betalningsstatus",
     "Filen måste vara i xlsx- eller xml-format.": "Filen måste vara i xlsx- eller xml-format.",
-    "Filen kunde inte läsas.": "Filen kunde inte läsas."
+    "Filen kunde inte läsas.": "Filen kunde inte läsas.",
+    "Admin": "Admin",
+    "Ålder": "Ålder",
+    "Medlemstyp": "Medlemstyp",
+    "Välj alla": "Välj alla",
+    "Inga personer valdes för import.": "Inga personer valdes för import.",
+    "{selected} av {total} valda": "{selected} av {total} valda",
+    "Inga personer matchar filtret.": "Inga personer matchar filtret."
   }
 }

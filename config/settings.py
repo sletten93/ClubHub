@@ -43,8 +43,11 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
+    # clubs above django.contrib.staticfiles so its runserver override wins
+    # management-command discovery (earlier apps win over the staticfiles
+    # built-in; see clubs/management/commands/runserver.py).
     'clubs',
+    'django.contrib.staticfiles',
     'people',
     'groups',
     'scheduling',
@@ -60,6 +63,8 @@ MIDDLEWARE = [
     # Compress dynamic HTML/JSON responses; whitenoise handles static files.
     'django.middleware.gzip.GZipMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    # DEBUG-only no-cache stamping on /media/ responses (see middleware).
+    'clubs.middleware.MediaNoCacheMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -105,6 +110,25 @@ DATABASES = {
             'transaction_mode': 'IMMEDIATE',
         },
     }
+}
+
+
+# Caching
+# https://docs.djangoproject.com/en/6.1/topics/cache/
+
+# Server-side cache for the public API (cache_page) and the club theme.
+# LocMemCache by default (single-process; swap for Redis/Memcached when
+# deploying multi-process). Under DEBUG the DummyCache turns every cache
+# get/set into a no-op so data edits are visible immediately while
+# developing — no stale API responses, theme changes are instant.
+CACHES = {
+    'default': {
+        'BACKEND': (
+            'django.core.cache.backends.dummy.DummyCache'
+            if DEBUG
+            else 'django.core.cache.backends.locmem.LocMemCache'
+        ),
+    },
 }
 
 

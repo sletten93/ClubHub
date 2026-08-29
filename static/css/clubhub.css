@@ -12342,6 +12342,42 @@ a:focus {
 }
 
 /* ------------------------------------------------------------------ */
+/* Global button spacing: inline button rows that wrap onto a new     */
+/* line on narrow screens (e.g. the week nav on /schedule/) must not  */
+/* sit flush against each other. Every .btn therefore gets a small    */
+/* vertical margin by default — a floor, not a lock: BS margin        */
+/* utilities still win over it (!important). Joined controls          */
+/* (input-group, btn-group) and table cells reset it again, since     */
+/* a margin there distorts control heights and row heights.           */
+/* ------------------------------------------------------------------ */
+.btn {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.input-group .btn,
+.btn-group .btn,
+.btn-group-vertical .btn,
+.btn-toolbar .btn,
+td .btn,
+th .btn {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Checkboxes and radios follow the club theme's primary color. BS5   */
+/* hardcodes its own blue here; --ch-primary is set by the theme      */
+/* block in base.html (fallback = SB Admin 2 primary). Covers the     */
+/* checked and indeterminate states of every form check, globally.    */
+/* ------------------------------------------------------------------ */
+.form-check-input:checked,
+.form-check-input[type="checkbox"]:indeterminate {
+  background-color: var(--ch-primary, #4e73df);
+  border-color: var(--ch-primary, #4e73df);
+}
+
+/* ------------------------------------------------------------------ */
 /* Personregister: sortable headers, search and filter controls       */
 /* ------------------------------------------------------------------ */
 
@@ -13956,8 +13992,9 @@ body.sidebar-toggled footer.sticky-footer {
 }
 
 /* Radio/checkbox collections (RadioSelect) render a wrapper div — give it
-   the bordered box the floating label sits on */
-.ch-float > div {
+   the bordered box the floating label sits on. Field error feedback
+   (.ch-field-error) is also a direct-child div and must stay unboxed. */
+.ch-float > div:not(.ch-field-error) {
   padding: 0.5rem 0.75rem;
   border: 1px solid #d1d3e2;
   border-radius: 0.35rem;
@@ -13993,6 +14030,18 @@ body.sidebar-toggled footer.sticky-footer {
   border-color: var(--ch-primary, #bac8f3);
   box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
   outline: 0;
+}
+
+/* --- Field error feedback --------------------------------------------
+   Default style for per-field form error text (used with text-danger).
+   One notch smaller than .small (0.875em) and explicitly unboxed — the
+   resets keep it plain text even if a container rule tries to frame it. */
+.ch-field-error {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+  font-size: 0.8125rem;
 }
 
 /* Chip-style checkbox groups (CheckboxSelectMultiple via the overridden

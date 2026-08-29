@@ -19,7 +19,7 @@
             <div class="mb-3 ch-float">
                 <label class="ch-float-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                 {{ field }}
-                {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                {% if field.errors %}<div class="text-danger ch-field-error mt-1">{{ field.errors.0 }}</div>{% endif %}
             </div>
             {% endif %}
             {% endfor %}
@@ -38,7 +38,7 @@
                         {{ form.primary_color }}
                         <small class="form-text text-muted">{% tr "Knappar, länkar, badges och fokusmarkering." "Klubbinställningar" %}</small>
                     </div>
-                    {% if form.primary_color.errors %}<div class="text-danger small">{{ form.primary_color.errors.0 }}</div>{% endif %}
+                    {% if form.primary_color.errors %}<div class="text-danger ch-field-error">{{ form.primary_color.errors.0 }}</div>{% endif %}
                 </div>
                 <div class="col-md-4">
                     <div class="mb-3 ch-float ch-float-top">
@@ -46,7 +46,7 @@
                         {{ form.secondary_color }}
                         <small class="form-text text-muted">{% tr "Menyn till vänster." "Klubbinställningar" %}</small>
                     </div>
-                    {% if form.secondary_color.errors %}<div class="text-danger small">{{ form.secondary_color.errors.0 }}</div>{% endif %}
+                    {% if form.secondary_color.errors %}<div class="text-danger ch-field-error">{{ form.secondary_color.errors.0 }}</div>{% endif %}
                 </div>
                 <div class="col-md-4">
                     <div class="ch-box ch-color-preview p-3" data-label="{% tr "Förhandsvisning" "Klubbinställningar" %}">
@@ -67,7 +67,7 @@
         <div class="card-body">
             {{ form.logo }}
             <small class="form-text text-muted">{% tr "Visas i menyn, på startsidan och som favicon. PNG, JPG eller WebP." "Klubbinställningar" %}</small>
-            {% if form.logo.errors %}<div class="text-danger small mt-1">{{ form.logo.errors.0 }}</div>{% endif %}
+            {% if form.logo.errors %}<div class="text-danger ch-field-error mt-1">{{ form.logo.errors.0 }}</div>{% endif %}
         </div>
     </div>
 
@@ -78,7 +78,7 @@
         <div class="card-body">
             {{ form.background_image }}
             <small class="form-text text-muted">{% tr "Används som diskret bakgrund bakom innehållet, med en ljus transparent överlägg för läsbarhet." "Klubbinställningar" %}</small>
-            {% if form.background_image.errors %}<div class="text-danger small mt-1">{{ form.background_image.errors.0 }}</div>{% endif %}
+            {% if form.background_image.errors %}<div class="text-danger ch-field-error mt-1">{{ form.background_image.errors.0 }}</div>{% endif %}
         </div>
     </div>
 

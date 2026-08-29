@@ -297,6 +297,13 @@
     "Roll": "Rooli",
     "Betalningsstatus": "Maksun tila",
     "Filen måste vara i xlsx- eller xml-format.": "Tiedoston on oltava xlsx- tai xml-muodossa.",
-    "Filen kunde inte läsas.": "Tiedostoa ei voitu lukea."
+    "Filen kunde inte läsas.": "Tiedostoa ei voitu lukea.",
+    "Admin": "Admin",
+    "Ålder": "Ikä",
+    "Medlemstyp": "Jäsentyyppi",
+    "Välj alla": "Valitse kaikki",
+    "Inga personer valdes för import.": "Yhtään henkilöä ei valittu tuotavaksi.",
+    "{selected} av {total} valda": "{selected} / {total} valittu",
+    "Inga personer matchar filtret.": "Yksikään henkilö ei vastaa suodatinta."
   }
 }

@@ -5,6 +5,7 @@ from urllib.parse import parse_qs
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 from django.urls import reverse
@@ -995,3 +996,96 @@ class PersonExportViewTests(TestCase):
             response["Content-Type"],
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
+
+
+class PersonImportPreviewTests(TestCase):
+    """Selection checkboxes and the preview filter in the import modal."""
+
+    def setUp(self):
+        self.club = Club.objects.create(name="Import BK", slug="importbk")
+        self.admin_user = User.objects.create_user(username="boss", password="pw12345!")
+        admin_person = Person.objects.create(
+            club=self.club,
+            first_name="Anna",
+            last_name="Admin",
+            user=self.admin_user,
+        )
+        StaffProfile.objects.create(person=admin_person, is_admin=True)
+        self.client.force_login(self.admin_user)
+
+    def upload_sportadmin(self, data_rows):
+        content = _build_sportadmin_xlsx(data_rows)
+        response = self.client.post(
+            reverse("people:import_preview"),
+            {"file": SimpleUploadedFile("register.xlsx", content)},
+        )
+        self.assertEqual(response.status_code, 200)
+        return response
+
+    def confirm(self, **post):
+        return self.client.post(reverse("people:import_confirm"), post, follow=True)
+
+    def test_preview_renders_all_rows_checked(self):
+        response = self.upload_sportadmin(
+            [
+                ["20041003-****", "Kvinna", "Adult", "Person", "", "", "", "", "",
+                 "", "", "", "adult@example.com", "", "", "", "", "", "", "", "",
+                 "", "", "", "", "", "2025-04-10", ""],
+                ["20180101-****", "Man", "Kid", "Person", "", "", "", "", "",
+                 "", "", "", "", "", "", "", "", "", "", "", "",
+                 "", "", "", "", "", "", ""],
+            ]
+        )
+        # One checkbox per row, all checked, values = session indices.
+        self.assertContains(response, 'name="selected"', count=2)
+        self.assertContains(
+            response,
+            'value="0" checked data-gender="female" data-age="over15" data-types="member"',
+        )
+        self.assertContains(
+            response,
+            'value="1" checked data-gender="male" data-age="under15" data-types=""',
+        )
+
+    def test_preview_metadata_from_clubhub_roles(self):
+        content = _build_clubhub_xlsx([[
+            "0007", "Kid", "Small", "20041003****", "Kvinna", "Gatan 1",
+            "80321", "Gävle", "kid@example.com", "0737461137", "",
+            "", "Tränare, Admin", "", "", "Small Kid",
+        ]])
+        response = self.client.post(
+            reverse("people:import_preview"),
+            {"file": SimpleUploadedFile("register.xlsx", content)},
+        )
+        self.assertContains(
+            response,
+            'data-gender="female" data-age="over15" data-types="trainer admin parent"',
+        )
+
+    def test_confirm_imports_only_selected_rows(self):
+        self.upload_sportadmin(
+            [
+                ["20041003-****", "Kvinna", "Adult", "Person", "", "", "", "", "",
+                 "", "", "", "adult@example.com", "", "", "", "", "", "", "", "",
+                 "", "", "", "", "", "2025-04-10", ""],
+                ["20180101-****", "Man", "Kid", "Person", "", "", "", "", "",
+                 "", "", "", "", "", "", "", "", "", "", "", "",
+                 "", "", "", "", "", "", ""],
+            ]
+        )
+        response = self.confirm(selected=["1"])
+        self.assertNotContains(response, "adult@example.com")
+        self.assertTrue(Person.objects.filter(email="").filter(first_name="Kid").exists())
+        self.assertFalse(Person.objects.filter(first_name="Adult").exists())
+
+    def test_confirm_without_selection_imports_nothing(self):
+        self.upload_sportadmin(
+            [
+                ["20041003-****", "Kvinna", "Adult", "Person", "", "", "", "", "",
+                 "", "", "", "adult@example.com", "", "", "", "", "", "", "", "",
+                 "", "", "", "", "", "2025-04-10", ""],
+            ]
+        )
+        response = self.confirm()
+        self.assertContains(response, "Inga personer valdes för import.")
+        self.assertEqual(Person.objects.count(), 1)  # only the admin herself

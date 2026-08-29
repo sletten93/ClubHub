@@ -464,6 +464,43 @@ class PersonDeleteView(AdminRequiredMixin, DeleteView):
 SESSION_KEY = "sportadmin_import_rows"
 
 
+def _preview_row_meta(row):
+    """Filter metadata for one preview row's select checkbox.
+
+    Uses the register filter vocabulary (gender values, under15/over15,
+    member/trainer/admin/parent) as space-separated data attributes so the
+    preview's filter button can check/uncheck rows client-side. A row is a
+    "member" exactly when the import would create a Membership (explicit
+    role or a start date); "parent" comes from the ClubHub export's
+    "Vårdnadshavare till" column. Age uses the same under-15 cutoff as the
+    register; rows without personnummer match neither age.
+    """
+    roles = row.get("roles") or []
+    types = []
+    if "Medlem" in roles or row.get("start_date"):
+        types.append("member")
+    if "Tränare" in roles:
+        types.append("trainer")
+    if "Admin" in roles:
+        types.append("admin")
+    if "Förälder" in roles or row.get("children"):
+        types.append("parent")
+
+    age = ""
+    personnummer = row.get("personnummer") or ""
+    if len(personnummer) >= 8:
+        today = date.today()
+        try:
+            cutoff = today.replace(year=today.year - 15)
+        except ValueError:  # born on 29 February
+            cutoff = today.replace(year=today.year - 15, day=28)
+        if personnummer[:8] <= cutoff.strftime("%Y%m%d"):
+            age = "over15"
+        else:
+            age = "under15"
+    return {"age": age, "types": " ".join(types)}
+
+
 class PersonImportPreviewView(AdminRequiredMixin, View):
     """Analyze an uploaded Sportadmin xlsx and show a confirmation table."""
 
@@ -511,10 +548,15 @@ class PersonImportPreviewView(AdminRequiredMixin, View):
 
         request.session[SESSION_KEY] = json.dumps(rows)
         request.session.modified = True
+        # Annotate copies for rendering (the stored rows stay canonical);
+        # row order is preserved so checkbox values are session indices.
         return render(
             request,
             "people/person_import_preview.html",
-            {"rows": rows, "warnings": warnings},
+            {
+                "rows": [dict(row, **_preview_row_meta(row)) for row in rows],
+                "warnings": warnings,
+            },
         )
 
 
@@ -534,6 +576,16 @@ class PersonImportConfirmView(AdminRequiredMixin, View):
             )
             return redirect("people:register")
         rows = json.loads(raw)
+        # Checkbox values are indices into the stored row list; an absent or
+        # empty selection imports nothing.
+        selected = set(request.POST.getlist("selected"))
+        rows = [row for index, row in enumerate(rows) if str(index) in selected]
+        if not rows:
+            messages.error(
+                request,
+                translate("Inga personer valdes för import.", "Personregister"),
+            )
+            return redirect("people:register")
         club = services.get_person(request.user).club
         created, skipped = import_person_rows(club, rows)
         message = translate(
